@@ -6,29 +6,38 @@ from keras.layers.core import Dense, Flatten, RepeatVector
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import GRU
 from keras.layers.convolutional import Convolution1D
+import os
 
 
-def encoder(max_length, charset_length, latent_rep_size):
+def encoder(path, max_length, charset_length, latent_rep_size):
     inputs = Input(shape=(max_length, charset_length), name='input_1')
     outputs, loss_function = add_encoder_layers(inputs, max_length, latent_rep_size)
     model = Model(input=inputs, output=outputs)
+    if os.path.isfile(path):
+        model.load_weights(path, by_name=True)
     model.compile(optimizer='Adam', loss=loss_function, metrics=['accuracy'])
     return model
 
 
-def decoder(max_length, charset_length, latent_rep_size):
+def decoder(path, max_length, charset_length, latent_rep_size):
     inputs = Input(shape=(latent_rep_size,), name='input_1')
     outputs = add_decoder_layers(inputs, max_length, charset_length, latent_rep_size)
     model = Model(input=inputs, output=outputs)
+    path = os.path.expanduser(path)
+    if os.path.isfile(path):
+        model.load_weights(path, by_name=True)
     model.compile(optimizer='Adam', loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
 
-def autoencoder(max_length, charset_length, latent_rep_size):
+def autoencoder(path, max_length, charset_length, latent_rep_size):
     inputs = Input(shape=(max_length, charset_length), name='input_1')
     latent_outputs, loss_function = add_encoder_layers(inputs, max_length, latent_rep_size)
     outputs = add_decoder_layers(latent_outputs, max_length, charset_length, latent_rep_size)
     model = Model(input=inputs, output=outputs)
+    path = os.path.expanduser(path)
+    if os.path.isfile(path):
+        model.load_weights(path, by_name=True)
     model.compile(optimizer='Adam', loss=loss_function, metrics=['accuracy'])
     return model
 
