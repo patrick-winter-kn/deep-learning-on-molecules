@@ -11,27 +11,23 @@ class EncoderThread (threading.Thread):
     thread_lock = threading.Lock()
     update_after_n = 100
 
-    def __init__(self, data, charset, smiles_length, progress):
+    def __init__(self, data, charset, progress, encoded_data, offset):
         threading.Thread.__init__(self)
         self.data = data
         self.charset = charset
-        self.smiles_length = smiles_length
         self.progress = progress
-        self.encoded_data = None
+        self.encoded_data = encoded_data
+        self.offset = offset
 
     def run(self):
         smiles = self.data
-        charset = self.charset
-        smiles_length = self.smiles_length
-        data_set = numpy.ndarray(shape=(len(smiles), smiles_length, len(charset)))
         for i in range(len(smiles)):
             for j in range(len(smiles[i])):
-                data_set[i, j] = encode_char(smiles[i][j], charset)
+                self.encoded_data[i + self.offset, j] = encode_char(smiles[i][j], self.charset)
             if i % EncoderThread.update_after_n is EncoderThread.update_after_n - 1:
                 EncoderThread.thread_lock.acquire()
                 self.progress.increment(EncoderThread.update_after_n)
                 EncoderThread.thread_lock.release()
-        self.encoded_data = data_set
 
     def get_encoded_data(self):
         return self.encoded_data
@@ -101,6 +97,7 @@ def extract_charset(smiles_strings):
 
 
 def write_encoded_smiles(file, name, smiles, smiles_length, charset):
+    data_set = file.create_dataset(name, (len(smiles), smiles_length, len(charset)))
     progress = Progress(len(smiles))
     threads = []
     number_chunks = multiprocessing.cpu_count()
@@ -108,14 +105,11 @@ def write_encoded_smiles(file, name, smiles, smiles_length, charset):
     for i in range(number_chunks):
         start = rows_per_chunk * i
         end = min(start + rows_per_chunk, len(smiles))
-        thread = EncoderThread(smiles[start:end], charset, smiles_length, progress)
+        thread = EncoderThread(smiles[start:end], charset, progress, data_set, start)
         thread.start()
         threads.append(thread)
-    data_set = numpy.ndarray(shape=(0, smiles_length, len(charset)))
     for thread in threads:
         thread.join()
-        data_set = numpy.concatenate((data_set, thread.get_encoded_data()), axis=0)
-    file.create_dataset(name, data=data_set)
     progress.finish()
 
 
