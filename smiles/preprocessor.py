@@ -1,5 +1,5 @@
 import numpy
-from tqdm import tnrange
+from progressbar import ProgressBar
 from itertools import chain
 
 
@@ -54,9 +54,11 @@ def extract_charset(smiles_strings):
 
 def write_encoded_smiles(file, name, smiles, smiles_length, charset):
     data_set = file.create_dataset(name, (len(smiles), smiles_length, len(charset)))
-    for i in tnrange(len(smiles)):
-        for j in range(len(smiles[i])):
-            data_set[i, j] = encode_char(smiles[i][j], charset)
+    with ProgressBar(max_value=len(smiles)) as progress:
+        for i in range(len(smiles)):
+            for j in range(len(smiles[i])):
+                data_set[i, j] = encode_char(smiles[i][j], charset)
+            progress.update(i)
 
 
 def encode_char(character, charset):
