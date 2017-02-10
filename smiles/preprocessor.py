@@ -8,6 +8,8 @@ _full_charset_ = sorted(list(chain.from_iterable(_all_chars_)))
 
 
 def preprocess(in_file, out_file, smiles_column_name='structure', max_length=120, charset=_full_charset_):
+    if not isinstance(charset, list):
+        charset = list(chain.from_iterable(charset))
     # get smiles
     smiles = convert_bytes_to_strings(in_file['table']['table'][smiles_column_name])
     # if max_length is none, find the biggest string in the data

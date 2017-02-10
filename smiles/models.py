@@ -10,7 +10,7 @@ import os
 
 
 def encoder(path, max_length, charset_length, latent_rep_size):
-    inputs = Input(shape=(max_length, charset_length), name='input_1')
+    inputs = Input(shape=(max_length, charset_length), name='input_3')
     outputs, loss_function = add_encoder_layers(inputs, max_length, latent_rep_size)
     model = Model(input=inputs, output=outputs)
     if os.path.isfile(path):
@@ -20,7 +20,7 @@ def encoder(path, max_length, charset_length, latent_rep_size):
 
 
 def decoder(path, max_length, charset_length, latent_rep_size):
-    inputs = Input(shape=(latent_rep_size,), name='input_1')
+    inputs = Input(shape=(latent_rep_size,), name='input_3')
     outputs = add_decoder_layers(inputs, max_length, charset_length, latent_rep_size)
     model = Model(input=inputs, output=outputs)
     path = os.path.expanduser(path)
@@ -31,7 +31,7 @@ def decoder(path, max_length, charset_length, latent_rep_size):
 
 
 def autoencoder(path, max_length, charset_length, latent_rep_size):
-    inputs = Input(shape=(max_length, charset_length), name='input_1')
+    inputs = Input(shape=(max_length, charset_length), name='input_3')
     latent_outputs, loss_function = add_encoder_layers(inputs, max_length, latent_rep_size)
     outputs = add_decoder_layers(latent_outputs, max_length, charset_length, latent_rep_size)
     model = Model(input=inputs, output=outputs)
