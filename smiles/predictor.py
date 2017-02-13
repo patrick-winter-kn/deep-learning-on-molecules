@@ -1,12 +1,12 @@
 import os
-import numpy
 import math
+from . import models
 from progressbar import ProgressBar
 
 
-def predict(model_path, model_constructor, data, charset, latent_rep_size, out_file):
+def predict(model_path, data, charset, latent_rep_size, out_file):
     model_path = os.path.expanduser(model_path)
-    model = model_constructor(model_path, data.shape[1], data.shape[2], latent_rep_size)
+    model = models.autoencoder(model_path, data.shape[1], data.shape[2], latent_rep_size)
     data_set = None
     with ProgressBar(max_value=len(data)) as progress:
         chunk_size = 100
@@ -47,3 +47,34 @@ def decode_char(vector, charset):
         if vector[i] > vector[max_index]:
             max_index = i
     return charset[max_index].decode('utf-8')
+
+
+def encode(model_path, data, latent_rep_size, out_file):
+    model_path = os.path.expanduser(model_path)
+    model = models.encoder(model_path, data.shape[1], data.shape[2], latent_rep_size)
+    data_set = out_file.create_dataset('latent_vectors', (len(data), latent_rep_size))
+    with ProgressBar(max_value=len(data)) as progress:
+        chunk_size = 100
+        number_chunks = math.ceil(len(data)/chunk_size)
+        for i in range(number_chunks):
+            start = i * chunk_size
+            end = min(start + chunk_size, len(data))
+            data_set[start:end] = model.predict(data[start:end])
+            progress.update(end)
+
+
+def decode(model_path, data, charset, max_length, out_file):
+    model_path = os.path.expanduser(model_path)
+    model = models.decoder(model_path, max_length, len(charset), data.shape[1])
+    data_set = None
+    with ProgressBar(max_value=len(data)) as progress:
+        chunk_size = 100
+        number_chunks = math.ceil(len(data)/chunk_size)
+        for i in range(number_chunks):
+            start = i * chunk_size
+            end = min(start + chunk_size, len(data))
+            results = model.predict(data[start:end])
+            if data_set is None:
+                data_set = out_file.create_dataset('structure', (len(data),), dtype=('S' + str(results.shape[1])))
+            write_decoded_smiles_chunk(results, charset, data_set, start)
+            progress.update(end)
