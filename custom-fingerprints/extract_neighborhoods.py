@@ -12,13 +12,12 @@ def get_arguments():
     return parser.parse_args()
 
 
-def main():
-    args = get_arguments()
-    prefix = args.input_table[:args.input_table.rfind('.')]
+def main(input_table):
+    prefix = input_table[:input_table.rfind('.')]
     neighborhoods_table = prefix + '-neighborhoods.h5'
     index_table = prefix + '-index.h5'
     fingerprint_table = prefix + '-fingerprint.h5'
-    input_file = h5py.File(args.input_table, 'r')
+    input_file = h5py.File(input_table, 'r')
     neighborhoods_file = h5py.File(neighborhoods_table, 'w')
     index_file = h5py.File(index_table, 'w')
     fingerprint_file = h5py.File(fingerprint_table, 'w')
@@ -143,7 +142,7 @@ class Neighborhood:
             tmp_string = ''
             list_depth = 0
             for character in string:
-                if character == ',':
+                if character == ',' and list_depth < 1:
                     neighbor_strings.append(tmp_string)
                     tmp_string = ''
                 else:
@@ -214,4 +213,5 @@ class Neighborhood:
             return dist
 
 
-main()
+args = get_arguments()
+main(args.input_table)
