@@ -133,6 +133,7 @@ def neighborhoods_from_string(string):
 
 
 def sorted_neighborhoods(neighborhoods_set):
+    # TODO this can take very long and needs a progress bar
     neighborhoods = list(neighborhoods_set)
     matrix = numpy.zeros(shape=(len(neighborhoods), len(neighborhoods)))
     for i in range(len(neighborhoods)):
