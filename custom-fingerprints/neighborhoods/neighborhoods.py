@@ -169,24 +169,24 @@ class Neighborhood:
 
     @classmethod
     def from_string(cls, string):
-        if '[' not in string:
+        if '(' not in string:
             return cls(string, [])
         else:
-            symbol = string[:string.find('[')]
-            string = string[string.find('[')+1:-1]
+            symbol = string[:string.find('(')]
+            string = string[string.find('(')+1:-1]
             neighbors = []
             neighbor_strings = []
             tmp_string = ''
             list_depth = 0
             for character in string:
-                if character == ',' and list_depth < 1:
+                if character == ')(' and list_depth < 1:
                     neighbor_strings.append(tmp_string)
                     tmp_string = ''
                 else:
                     tmp_string += character
-                    if character == '[':
+                    if character == '(':
                         list_depth += 1
-                    elif character == ']':
+                    elif character == ')':
                         list_depth -= 1
             if len(tmp_string) > 0:
                 neighbor_strings.append(tmp_string)
@@ -223,10 +223,10 @@ class Neighborhood:
     def __repr__(self):
         representation = self.symbol
         if len(self.neighbors) > 0:
-            representation += '['
+            representation += '('
             for neighbor in self.neighbors:
-                representation += str(neighbor) + ','
-            representation = representation[:-1] + ']'
+                representation += str(neighbor) + ')('
+            representation = representation[:-2] + ')'
         return representation
 
     def distance(self, other):
