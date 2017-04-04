@@ -51,11 +51,12 @@ def extract_neighborhoods(smiles_file, neighborhoods_file):
 
 
 def write_index_positions(neighborhoods_set, index_file):
-    print('Writing index positions')
     index_out = index_file.create_dataset('index', (len(neighborhoods_set),), 'S2000')
     i = 0
+    neighborhoods_sorted = sorted_neighborhoods(neighborhoods_set)
+    print('Writing index positions')
     with ProgressBar(max_value=len(neighborhoods_set)) as progress:
-        for neighborhood in sorted_neighborhoods(neighborhoods_set):
+        for neighborhood in neighborhoods_sorted:
             index_out[i] = str(neighborhood).encode('utf-8')
             i += 1
             progress.update(i)
@@ -133,12 +134,17 @@ def neighborhoods_from_string(string):
 
 
 def sorted_neighborhoods(neighborhoods_set):
-    # TODO this can take very long and needs a progress bar
     neighborhoods = list(neighborhoods_set)
     matrix = numpy.zeros(shape=(len(neighborhoods), len(neighborhoods)))
-    for i in range(len(neighborhoods)):
-        for j in range(i+1, len(neighborhoods)):
-            matrix[i][j] = neighborhoods[i].distance(neighborhoods[j])
+    print('Calculating distance matrix')
+    counter = 0
+    with ProgressBar(max_value=(len(neighborhoods)*len(neighborhoods)-len(neighborhoods))/2) as progress:
+        for i in range(len(neighborhoods)):
+            for j in range(i+1, len(neighborhoods)):
+                matrix[i][j] = neighborhoods[i].distance(neighborhoods[j])
+                counter += 1
+                progress.update(counter)
+    print('Sorting based on distances')
     path = solve_tsp(matrix)
     sorted = []
     for i in path:
