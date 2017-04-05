@@ -22,5 +22,5 @@ def create_model(input_size):
     dropout_layer_2 = Dropout(0.5)(dense_layer_2)
     output_layer =Dense(2, activation='softmax')(dropout_layer_2)
     model = Model(input=input_layer, output=output_layer)
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
     return model

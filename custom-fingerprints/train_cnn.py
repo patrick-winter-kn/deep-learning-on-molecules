@@ -1,4 +1,5 @@
 import argparse
+import numpy
 from network import cnn
 from os import path
 from keras import models
@@ -15,10 +16,34 @@ def get_arguments():
     return parser.parse_args()
 
 
+def argmax(self, axis=None, out=None):
+    # This is only implemented for axis=1
+    if not hasattr(self, '_preprocessed_argmax_'):
+        result = []
+        for value in self:
+            max_index = 0
+            max_value = value[0]
+            for i in range(1, len(value)):
+                inner_value = value[i]
+                if inner_value > max_value:
+                    max_value = inner_value
+                    max_index = i
+            result.append(max_index)
+        self._preprocessed_argmax_ = numpy.array(result)
+    return self._preprocessed_argmax_
+
+
 args = get_arguments()
 data_file = h5py.File(args.data, 'r')
 data = data_file['fingerprint']
 classes = data_file['class']
+type(classes).argmax = argmax
+class_zero_sum = 0
+class_one_sum = 0
+for i in range(classes.shape[0]):
+    class_zero_sum += classes[i][0]
+    class_one_sum += classes[i][1]
+class_weight = {0:classes.shape[0]/class_zero_sum,1:classes.shape[0]/class_one_sum}
 if path.isfile(args.model):
     print('Loading existing model')
     model = models.load_model(args.model)
@@ -26,9 +51,9 @@ else:
     print('Creating new model')
     model = cnn.create_model(data.shape[1])
 checkpointer = ModelCheckpoint(filepath=args.model, verbose=1)
-reduce_learning_rate = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
+reduce_learning_rate = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=2, min_lr=0.001)
 print('Training model for ' + str(args.epochs) + ' epochs')
-model.fit(data, classes, nb_epoch=args.epochs, shuffle='batch', batch_size=args.batch_size, callbacks=[checkpointer,
-                                                                                                       reduce_learning_rate])
+model.fit(data, classes, nb_epoch=args.epochs, shuffle='batch', batch_size=args.batch_size, class_weight=class_weight,
+          callbacks=[checkpointer, reduce_learning_rate])
 print('Training completed')
 data_file.close()
