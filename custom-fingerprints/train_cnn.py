@@ -12,7 +12,7 @@ def get_arguments():
     parser.add_argument('data', type=str, help='Path to a HDF5 file containing the fingerprints')
     parser.add_argument('model', type=str, help='Path to the model.')
     parser.add_argument('--epochs', type=int, default=1, help='Number of epochs to train')
-    parser.add_argument('--batch_size', type=int, default=500, help='Number of samples in a batch')
+    parser.add_argument('--batch_size', type=int, default=50, help='Number of samples in a batch')
     return parser.parse_args()
 
 
