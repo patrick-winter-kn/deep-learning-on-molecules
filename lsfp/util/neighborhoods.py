@@ -1,10 +1,10 @@
-from rdkit import Chem
 from functools import total_ordering
 import h5py
 from progressbar import ProgressBar
 import numpy
-from tsp_solver.greedy import  solve_tsp
 import random
+from rdkit import Chem
+from tsp_solver.greedy import  solve_tsp
 
 
 def fingerprint_with_new_index(smiles_file_path, random_order):
@@ -36,23 +36,31 @@ def fingerprint_with_existing_index(smiles_file_path, index_file_path):
     fingerprint_file.close()
 
 
-def extract_neighborhoods(smiles_file, neighborhoods_file):
+def extract_neighborhoods(smiles_file, neighborhoods_file, radius):
     print('Extracting neighborhoods')
-    neighborhoods_set = set()
-    smiles = smiles_file['smiles']
-    neighborhoods_out = neighborhoods_file.create_dataset('neighborhoods', (len(smiles),), 'S2000')
+    smiles_hdf5 = h5py.File(smiles_file, 'r')
+    neighborhoods_hdf5 = h5py.File(neighborhoods_file, 'w')
+    smiles = smiles_hdf5['smiles']
+    neighborhoods_out = neighborhoods_hdf5.create_dataset('neighborhoods', (len(smiles),), 'S2000')
     with ProgressBar(max_value=len(smiles)) as progress:
         for i in range(len(smiles)):
-            neighborhoods = neighborhoods_from_smiles(smiles[i])
-            for neighborhood in neighborhoods:
-                neighborhoods_set.add(neighborhood)
+            neighborhoods = neighborhoods_from_smiles(smiles[i], radius)
             neighborhoods_out[i] = neighborhoods_to_string(neighborhoods).encode('utf-8')
             progress.update(i)
-    return neighborhoods_set
+    smiles_hdf5.close()
+    neighborhoods_hdf5.close()
 
 
-def write_index_positions(neighborhoods_set, index_file, random_order):
-    index_out = index_file.create_dataset('index', (len(neighborhoods_set),), 'S2000')
+
+def write_index_positions(neighborhoods_file, index_file, random_order):
+    neighborhoods_hdf5 = h5py.File(neighborhoods_file, 'r')
+    index_hdf5 = h5py.File(index_file, 'w')
+    neighborhoods_set = set()
+    for neighborhoods_string in neighborhoods_hdf5['neighborhoods']:
+        neighborhoods = neighborhoods_from_string(neighborhoods_string.decode('utf-8'))
+        for n in neighborhoods:
+            neighborhoods_set.add(n)
+    index_out = index_hdf5.create_dataset('index', (len(neighborhoods_set),), 'S2000')
     i = 0
     if random_order:
         neighborhoods_sorted = randomized_neighborhoods(neighborhoods_set)
@@ -64,14 +72,19 @@ def write_index_positions(neighborhoods_set, index_file, random_order):
             index_out[i] = str(neighborhood).encode('utf-8')
             i += 1
             progress.update(i)
+    neighborhoods_hdf5.close()
+    index_hdf5.close()
 
 
 def generate_fingerprints(neighborhoods_file, index_file, fingerprint_file):
-    index_dict = dict_from_file(index_file)
+    neighborhoods_hdf5 = h5py.File(neighborhoods_file, 'r')
+    index_hdf5 = h5py.File(index_file, 'r')
+    fingerprint_hdf5 = h5py.File(fingerprint_file, 'w')
+    index_dict = dict_from_file(index_hdf5)
     print('Generating fingerprints')
-    neighborhoods_out = neighborhoods_file['neighborhoods']
-    index_out = index_file['index']
-    fingerprint_out = fingerprint_file.create_dataset('fingerprint', (neighborhoods_out.shape[0], index_out.shape[0]),
+    neighborhoods_out = neighborhoods_hdf5['neighborhoods']
+    index_out = index_hdf5['index']
+    fingerprint_out = fingerprint_hdf5.create_dataset('fingerprint', (neighborhoods_out.shape[0], index_out.shape[0]),
                                                       'I')
     with ProgressBar(max_value=neighborhoods_out.shape[0]) as progress:
         for i in range(neighborhoods_out.shape[0]):
@@ -83,6 +96,9 @@ def generate_fingerprints(neighborhoods_file, index_file, fingerprint_file):
                     array[index] = neighborhoods[neighborhood]
             fingerprint_out[i] = array
             progress.update(i+1)
+    neighborhoods_hdf5.close()
+    index_hdf5.close()
+    fingerprint_hdf5.close()
 
 
 def dict_from_file(file):
@@ -96,11 +112,11 @@ def dict_from_file(file):
     return index_dict
 
 
-def neighborhoods_from_smiles(smiles):
+def neighborhoods_from_smiles(smiles, radius):
     mol = Chem.MolFromSmiles(smiles)
     neighborhoods = {}
     for atom in mol.GetAtoms():
-        atom_neighborhood = Neighborhood.from_atom(atom, 2, set())
+        atom_neighborhood = Neighborhood.from_atom(atom, radius, set())
         if atom_neighborhood in neighborhoods:
             neighborhoods[atom_neighborhood] += 1
         else:
@@ -189,25 +205,10 @@ class Neighborhood:
             return cls(string, [])
         else:
             symbol = string[:string.find('(')]
-            string = string[string.find('(')+1:-1]
+            string = string[string.find('('):]
             neighbors = []
-            neighbor_strings = []
-            tmp_string = ''
-            list_depth = 0
-            for character in string:
-                if character == ')(' and list_depth < 1:
-                    neighbor_strings.append(tmp_string)
-                    tmp_string = ''
-                else:
-                    tmp_string += character
-                    if character == '(':
-                        list_depth += 1
-                    elif character == ')':
-                        list_depth -= 1
-            if len(tmp_string) > 0:
-                neighbor_strings.append(tmp_string)
-            for neighbor_string in neighbor_strings:
-                neighbors.append(Neighborhood.from_string(neighbor_string))
+            for split in find_splits(string):
+                neighbors.append(Neighborhood.from_string(split))
             return cls(symbol, neighbors)
 
     def __eq__(self, other):
@@ -242,7 +243,7 @@ class Neighborhood:
             representation += '('
             for neighbor in self.neighbors:
                 representation += str(neighbor) + ')('
-            representation = representation[:-2] + ')'
+            representation = representation[:-1]
         return representation
 
     def distance(self, other):
@@ -267,3 +268,18 @@ class Neighborhood:
             else:
                 atom_pairs[pair_string] = 1
             self.neighbors[i].add_atom_pairs(atom_pairs)
+
+def find_splits(string):
+    splits = []
+    start = 1
+    depth = 0
+    for i in range(len(string)):
+        character = string[i]
+        if character == '(':
+            depth += 1
+        elif character == ')':
+            depth -= 1
+        if depth == 0:
+            splits.append(string[start : i])
+            start = i + 2
+    return splits
