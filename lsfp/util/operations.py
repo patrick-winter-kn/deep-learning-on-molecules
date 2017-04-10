@@ -89,7 +89,7 @@ def file_path(directory, name, suffix=None, id=None):
     if directory.endswith('/'):
         directory = directory[:-1]
     if id is not None:
-        name += '-' + id
+        name += '-' + str(id)
     if suffix is not None:
         name += '-' + suffix
     return directory + '/' + name + '.h5'
