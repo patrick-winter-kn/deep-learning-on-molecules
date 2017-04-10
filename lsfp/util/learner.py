@@ -9,6 +9,7 @@ import numpy
 
 
 def train_model(train_file, model_file, epochs, batch_size):
+    print('Training model \'' + model_file + '\'')
     train_hdf5 = h5py.File(train_file, 'r')
     fingerprints = train_hdf5['fingerprint']
     classes = train_hdf5['classes']
@@ -39,6 +40,7 @@ def train_model(train_file, model_file, epochs, batch_size):
 
 
 def predict(test_file, model_file, predictions_file, batch_size):
+    print('Predicting')
     model = models.load_model(model_file)
     test_hdf5 = h5py.File(test_file, 'r')
     predictions_hdf5 = h5py.File(predictions_file, 'w')

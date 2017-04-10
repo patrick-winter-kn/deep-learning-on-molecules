@@ -30,14 +30,14 @@ def prepare_data(directory, name, radius, random):
 
 
 def train_model(directory, name, id, epochs, batch_size):
-    learner.train_model(file_path(directory, name, _train_suffix_, id), file_path(directory, name, _model_suffix_, id),
+    learner.train_model(file_path(directory, name, _train_suffix_), file_path(directory, name, _model_suffix_, id),
                         epochs, batch_size)
 
 
 def predict(directory, name, id, batch_size):
     if exists(directory, name, _predictions_suffix_, id):
         return
-    learner.predict(file_path(directory, name, _test_suffix_, id), file_path(directory, name, _model_suffix_, id),
+    learner.predict(file_path(directory, name, _test_suffix_), file_path(directory, name, _model_suffix_, id),
                     file_path(directory, name, _predictions_suffix_, id), batch_size)
 
 
