@@ -154,6 +154,10 @@ def neighborhoods_from_string(string):
 
 
 def sorted_neighborhoods(neighborhoods_set):
+    return greedy_sorted_neighborhoods(neighborhoods_set)
+
+
+def tsp_sorted_neighborhoods(neighborhoods_set):
     neighborhoods = list(neighborhoods_set)
     matrix = numpy.zeros(shape=(len(neighborhoods), len(neighborhoods)))
     print('Calculating distance matrix')
@@ -169,6 +173,33 @@ def sorted_neighborhoods(neighborhoods_set):
     sorted = []
     for i in path:
         sorted.append(neighborhoods[i])
+    return sorted
+
+
+def greedy_sorted_neighborhoods(neighborhoods_set):
+    print('Sorting neighborhoods greedily')
+    neighborhoods = list(neighborhoods_set)
+    sorted = []
+    if neighborhoods:
+        with ProgressBar(max_value=(len(neighborhoods)*len(neighborhoods)-len(neighborhoods))/2) as progress:
+            sorted.append(neighborhoods[0])
+            del neighborhoods[0]
+            counter = 0
+            while neighborhoods:
+                tail = sorted[len(sorted)-1]
+                min_distance = tail.distance(neighborhoods[0])
+                min_distance_index = 0
+                counter += 1
+                progress.update(counter)
+                for i in range(1, len(neighborhoods)):
+                    distance = tail.distance(neighborhoods[i])
+                    if distance < min_distance:
+                        min_distance = distance
+                        min_distance_index = i
+                    counter += 1
+                    progress.update(counter)
+                sorted.append(neighborhoods[min_distance_index])
+                del neighborhoods[min_distance_index]
     return sorted
 
 
