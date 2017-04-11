@@ -45,8 +45,8 @@ for i in range(len(dirs)):
         open(dirs[i] + 'preprocessing-done', 'a').close()
     id_offset = find_first_free_id(dirs[i], names[i])
     for id in range(id_offset, args.repeats + id_offset):
-        operations.train_model(dirs[i], names[i], id, 5, 200)
-        operations.predict(dirs[i], names[i], id, 200)
+        operations.train_model(dirs[i], names[i], id, 5, 100)
+        operations.predict(dirs[i], names[i], id, 100)
     print('='*60)
     print(str(datetime.now())[:-7])
     print('Finished \'' + dirs[i] + '\'')
