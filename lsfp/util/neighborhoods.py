@@ -5,6 +5,7 @@ import numpy
 import random
 from rdkit import Chem
 from tsp_solver.greedy import  solve_tsp
+from sklearn.manifold import MDS
 
 
 def fingerprint_with_new_index(smiles_file_path, random_order):
@@ -154,7 +155,30 @@ def neighborhoods_from_string(string):
 
 
 def sorted_neighborhoods(neighborhoods_set):
-    return greedy_sorted_neighborhoods(neighborhoods_set)
+    return mds_sorted_neighborhoods(neighborhoods_set)
+
+
+def mds_sorted_neighborhoods(neighborhoods_set):
+    neighborhoods = list(neighborhoods_set)
+    matrix = numpy.zeros(shape=(len(neighborhoods), len(neighborhoods)))
+    print('Calculating distance matrix')
+    counter = 0
+    with ProgressBar(max_value=(len(neighborhoods)*len(neighborhoods)-len(neighborhoods))/2) as progress:
+        for i in range(len(neighborhoods)):
+            for j in range(i+1, len(neighborhoods)):
+                matrix[i][j] = neighborhoods[i].distance(neighborhoods[j])
+                matrix[j][i] = matrix[i][j]
+                counter += 1
+                progress.update(counter)
+    print('Sorting based on distances')
+    mds = MDS(n_components=1, dissimilarity='precomputed')
+    results = mds.fit_transform(matrix)
+    sorted = []
+    for index in results.argsort(axis=None):
+        print(type(index))
+        print(index)
+        sorted.append(neighborhoods[index])
+    return sorted
 
 
 def tsp_sorted_neighborhoods(neighborhoods_set):
@@ -207,6 +231,58 @@ def randomized_neighborhoods(neighborhoods_set):
     neighborhoods = list(neighborhoods_set)
     random.shuffle(neighborhoods)
     return neighborhoods
+
+
+def evaluate_index_locality(data, index, out, radius):
+    data_file = h5py.File(data, 'r')
+    index_file = h5py.File(index, 'r')
+    out_file = h5py.File(out, 'w')
+    smiles = data_file['smiles']
+    index = index_file['index']
+    results = {}
+    index_lookup = {}
+    for i in range(index.shape[0]):
+        index_lookup[index[i].decode('utf-8')] = i
+    print('Calculating position differences')
+    with ProgressBar(max_value=smiles.shape[0]) as progress:
+        for i in range(smiles.shape[0]):
+            seen = set()
+            mol = Chem.MolFromSmiles(smiles[i].decode('utf-8'))
+            for atom in mol.GetAtoms():
+                atom_neighborhood = str(Neighborhood.from_atom(atom, radius, set()))
+                for neighbor_atom in atom.GetNeighbors():
+                    atom_pair = to_tuple(atom, neighbor_atom)
+                    # Skip ones that we have already seen from the other side
+                    if atom_pair not in seen:
+                        seen.add(atom_pair)
+                        neighbor_neighborhood = str(Neighborhood.from_atom(neighbor_atom, radius, set()))
+                        atom_position = index_lookup[atom_neighborhood]
+                        neighbor_position = index_lookup[neighbor_neighborhood]
+                        difference = abs(atom_position - neighbor_position)
+                        if difference in results:
+                            results[difference] += 1
+                        else:
+                            results[difference] = 1
+            progress.update(i+1)
+    out = out_file.create_dataset('position_difference', shape=(sum(results.values()),1))
+    i = 0
+    print('Writing results')
+    with ProgressBar(max_value=out.shape[0]) as progress:
+        for difference in results:
+            for j in range(results[difference]):
+                out[i] = difference
+                i += 1
+                progress.update(i)
+    data_file.close()
+    index_file.close()
+    out_file.close()
+
+
+def to_tuple(atom_1, atom_2):
+    if atom_1.GetIdx() <= atom_2.GetIdx():
+        return (atom_1.GetIdx(), atom_2.GetIdx())
+    else:
+        return (atom_2.GetIdx(), atom_1.GetIdx())
 
 
 @total_ordering
