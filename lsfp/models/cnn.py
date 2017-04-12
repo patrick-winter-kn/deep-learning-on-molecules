@@ -7,22 +7,22 @@ from keras.layers.pooling import MaxPooling1D
 
 
 def create_model(input_size, output_size):
-    input_layer = Input(shape=(input_size,))
-    dropout_layer_1 = Dropout(0.2)(input_layer)
+    input_layer = Input(shape=(input_size,), name='input')
+    l = Dropout(0.2, name='dropout_input')(input_layer)
     # Convolution expects 2 dimensions and will slide over the first one
-    reshape_layer = Reshape((input_size, 1))(dropout_layer_1)
-    conv_layer_1 = Convolution1D(32, 32, activation='relu')(reshape_layer)
-    dropout_layer_2 = Dropout(0.2)(conv_layer_1)
-    conv_layer_2 = Convolution1D(64, 16, activation='relu')(dropout_layer_2)
-    dropout_layer_3 = Dropout(0.2)(conv_layer_2)
-    pool_layer = MaxPooling1D(2)(dropout_layer_3)
-    dropout_layer_4 = Dropout(0.2)(pool_layer)
-    flatten_layer = Flatten()(dropout_layer_4)
-    dense_layer_1 = Dense(256, activation='relu')(flatten_layer)
-    dropout_layer_5 = Dropout(0.2)(dense_layer_1)
-    dense_layer_2 = Dense(128, activation='relu')(dropout_layer_5)
-    dropout_layer_6 = Dropout(0.2)(dense_layer_2)
-    output_layer =Dense(output_size, activation='softmax')(dropout_layer_6)
+    l = Reshape((input_size, 1), name='reshape')(l)
+    l = Convolution1D(32, 32, strides=16 ,activation='relu', name='convolution_1')(l)
+    l = Dropout(0.2, name='dropout_convolution_1')(l)
+    l = Convolution1D(16, 16, strides=8, activation='relu', name='convolution_2')(l)
+    l = Dropout(0.2, name='dropout_convolution_2')(l)
+    l = MaxPooling1D(4, name='max_pooling')(l)
+    l = Dropout(0.2, name='dropout_max_pooling')(l)
+    l = Flatten(name='flatten')(l)
+    l = Dense(128, activation='relu', name='dense_1')(l)
+    l = Dropout(0.2, name='dropout_dense_1')(l)
+    l = Dense(64, activation='relu', name='dense_2')(l)
+    l = Dropout(0.2, name='dropout_dense_2')(l)
+    output_layer =Dense(output_size, activation='softmax', name='output')(l)
     model = Model(inputs=input_layer, outputs=output_layer)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
     return model
@@ -30,4 +30,4 @@ def create_model(input_size, output_size):
 
 def print_model(model):
     for layer in model.layers:
-        print(layer.name + ' : ' + str(layer.output_shape))
+        print(layer.name + ' : In:' + str(layer.input_shape[1:]) + ' Out:' + str(layer.output_shape[1:]))

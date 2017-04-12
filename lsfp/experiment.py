@@ -9,7 +9,7 @@ import gc
 def get_arguments():
     parser = argparse.ArgumentParser(description='Runs the locality experiment')
     parser.add_argument('directory', type=str, help='Directory containing the data sets in subfolders')
-    parser.add_argument('--repeats', type=int, default=5, help='Number of repeated trainings on the same data set')
+    parser.add_argument('--repeats', type=int, default=10, help='Number of repeated trainings on the same data set')
     return parser.parse_args()
 
 
@@ -47,7 +47,7 @@ for i in range(len(dirs)):
         open(dirs[i] + 'preprocessing-done', 'a').close()
     id_offset = find_first_free_id(dirs[i], names[i])
     for id in range(id_offset, args.repeats + id_offset):
-        operations.train_model(dirs[i], names[i], id, 5, 100)
+        operations.train_model(dirs[i], names[i], id, 10, 100)
         operations.predict(dirs[i], names[i], id, 100)
     print('='*60)
     print(str(datetime.now())[:-7])
