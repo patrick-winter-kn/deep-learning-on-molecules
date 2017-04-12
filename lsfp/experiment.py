@@ -1,7 +1,9 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import argparse
 from util import operations
-import os
 from datetime import datetime
+import gc
 
 
 def get_arguments():
@@ -51,3 +53,4 @@ for i in range(len(dirs)):
     print(str(datetime.now())[:-7])
     print('Finished \'' + dirs[i] + '\'')
     print('='*60)
+gc.collect()

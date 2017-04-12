@@ -19,9 +19,8 @@ def train_model(train_file, model_file, epochs, batch_size):
     else:
         print('Creating new model')
         model = cnn.create_model(fingerprints.shape[1], classes.shape[1])
-    print('Model:')
-    cnn.print_model(model)
-
+    # print('Model:')
+    # cnn.print_model(model)
     type(classes).argmax = argmax
     class_zero_sum = 0
     class_one_sum = 0
@@ -32,7 +31,7 @@ def train_model(train_file, model_file, epochs, batch_size):
     checkpointer = ModelCheckpoint(filepath=model_file, verbose=0)
     reduce_learning_rate = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=2, min_lr=0.001)
     print('Training model for ' + str(epochs) + ' epochs')
-    model.fit(fingerprints, classes, nb_epoch=epochs, shuffle='batch', batch_size=batch_size,
+    model.fit(fingerprints, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
               class_weight=class_weight, callbacks=[checkpointer, reduce_learning_rate])
     print('Training completed')
     train_hdf5.close()

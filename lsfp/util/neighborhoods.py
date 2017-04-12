@@ -175,8 +175,6 @@ def mds_sorted_neighborhoods(neighborhoods_set):
     results = mds.fit_transform(matrix)
     sorted = []
     for index in results.argsort(axis=None):
-        print(type(index))
-        print(index)
         sorted.append(neighborhoods[index])
     return sorted
 
