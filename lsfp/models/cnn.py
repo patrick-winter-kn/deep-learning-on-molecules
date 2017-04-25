@@ -28,6 +28,14 @@ def create_model(input_size, output_size):
     return model
 
 
+def create_model_simple(input_size, output_size):
+    input_layer = Input(shape=(input_size,), name='input')
+    output_layer =Dense(output_size, activation='softmax', name='output')(input_layer)
+    model = Model(inputs=input_layer, outputs=output_layer)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+    return model
+
+
 def print_model(model):
     for layer in model.layers:
         print(layer.name + ' : In:' + str(layer.input_shape[1:]) + ' Out:' + str(layer.output_shape[1:]))

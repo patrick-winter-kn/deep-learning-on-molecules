@@ -23,6 +23,22 @@ def create_model(input_shape, output_size, latent_rep_size):
     return model
 
 
+def create_model_simple(input_shape, output_size, latent_rep_size):
+    input_layer = Input(shape=input_shape, name='input')
+    l = Convolution1D(9, 9, activation='relu', name='convolution_1')(input_layer)
+    l = Convolution1D(9, 9, activation='relu', name='convolution_2')(l)
+    l = Convolution1D(10, 11, activation='relu', name='convolution_3')(l)
+    l = Flatten(name='flatten_1')(l)
+    l = Dense(435, activation='relu', name='dense_1')(l)
+    l = Dense(latent_rep_size, activation='relu', name='latent_rep')
+    l = Dense(128, activation='relu', name='dense_2')(l)
+    l = Dense(64, activation='relu', name='dense_3')(l)
+    output_layer =Dense(output_size, activation='softmax', name='output')(l)
+    model = Model(inputs=input_layer, outputs=output_layer)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+    return model
+
+
 def print_model(model):
     for layer in model.layers:
         print(layer.name + ' : In:' + str(layer.input_shape[1:]) + ' Out:' + str(layer.output_shape[1:]))

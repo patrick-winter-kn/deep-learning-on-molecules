@@ -14,7 +14,7 @@ def train(train_file, model_file, latent_rep_size, epochs, batch_size):
         model = models.load_model(model_file, custom_objects={'sampling':cnn.Sampler(latent_rep_size).sampling})
     else:
         print('Creating new model')
-        model = cnn.create_model(smiles_matrix.shape[1:], classes.shape[1], latent_rep_size)
+        model = cnn.create_model_simple(smiles_matrix.shape[1:], classes.shape[1], latent_rep_size)
     checkpointer = ModelCheckpoint(filepath=model_file, verbose=0)
     reduce_learning_rate = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=2, min_lr=0.001)
     print('Training model for ' + str(epochs) + ' epochs')
