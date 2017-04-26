@@ -39,4 +39,4 @@ class ModelHistory(Callback):
         self._file_.close()
 
     def on_epoch_end(self, epoch, logs=None):
-        self._file_.write(str(logs.get('loss')) + ',' + str(logs.get('categorical_accuracy') + '\n'))
+        self._file_.write(str(logs.get('loss')) + ',' + str(logs.get('categorical_accuracy')) + '\n')
