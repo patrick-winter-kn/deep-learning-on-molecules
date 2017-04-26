@@ -15,5 +15,5 @@ def get_arguments():
 
 
 args = get_arguments()
-learn.train(args.data, args.model, 292, args.epochs, args.batch_size)
+learn.train(args.data, args.model, args.epochs, args.batch_size)
 gc.collect()
