@@ -2,7 +2,7 @@ from models import cnn
 import h5py
 from os import path
 from keras import models
-from keras.callbacks import  ModelCheckpoint, ReduceLROnPlateau, Callback
+from keras.callbacks import  ModelCheckpoint, ReduceLROnPlateau, Callback, EarlyStopping
 
 
 def train(train_file, model_file, epochs, batch_size):
@@ -18,9 +18,10 @@ def train(train_file, model_file, epochs, batch_size):
     checkpointer = ModelCheckpoint(filepath=model_file, verbose=0)
     reduce_learning_rate = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=2, min_lr=0.001)
     model_history = ModelHistory(model_file[:-3] + '-history.csv')
+    early_stopping = EarlyStopping(monitor='loss')
     print('Training model for ' + str(epochs) + ' epochs')
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-              callbacks=[checkpointer, reduce_learning_rate, model_history])
+              callbacks=[early_stopping, checkpointer, reduce_learning_rate, model_history])
     train_hdf5.close()
 
 
