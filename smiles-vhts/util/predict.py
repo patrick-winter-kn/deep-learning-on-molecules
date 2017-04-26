@@ -5,11 +5,11 @@ from progressbar import ProgressBar
 import math
 
 
-def predict(test_file, model_file, predictions_file, latent_rep_size, batch_size):
+def predict(test_file, model_file, predictions_file, batch_size):
     print('Predicting')
     test_hdf5 = h5py.File(test_file, 'r')
     predictions_hdf5 = h5py.File(predictions_file, 'w')
-    model = models.load_model(model_file, custom_objects={'sampling': cnn.Sampler(latent_rep_size).sampling})
+    model = models.load_model(model_file, custom_objects={'sampling': cnn.Sampler().sampling})
     smiles_matrix = test_hdf5['smiles_matrix']
     classes = test_hdf5['classes']
     predictions = predictions_hdf5.create_dataset('predictions', (classes.shape[0], classes.shape[1]))

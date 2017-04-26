@@ -15,5 +15,5 @@ def get_arguments():
 
 
 args = get_arguments()
-predict.predict(args.data, args.model, args.predictions, 292, args.batch_size)
+predict.predict(args.data, args.model, args.predictions, args.batch_size)
 gc.collect()
