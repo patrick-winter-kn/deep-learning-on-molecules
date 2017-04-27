@@ -11,9 +11,10 @@ def get_arguments():
     parser.add_argument('model', type=str, help='Model')
     parser.add_argument('--epochs', type=int, default=1, help='Number of epochs')
     parser.add_argument('--batch_size', type=int, default=100, help='Size of a batch')
+    parser.add_argument('--validation', type=str, default=None, help='Validation data set')
     return parser.parse_args()
 
 
 args = get_arguments()
-learn.train(args.data, args.model, args.epochs, args.batch_size)
+learn.train(args.data, args.validation, args.model, args.epochs, args.batch_size)
 gc.collect()

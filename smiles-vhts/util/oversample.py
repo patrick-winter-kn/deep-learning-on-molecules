@@ -4,11 +4,11 @@ from progressbar import ProgressBar
 import math
 
 
-def oversample(train_file):
-    print('Oversampling training data')
+def oversample(data_file):
+    print('Oversampling data in ' + data_file)
     # This is currently only implemented for 2 classes
-    prefix = train_file[:train_file.rfind('.')]
-    source_hdf5 = h5py.File(train_file, 'r')
+    prefix = data_file[:data_file.rfind('.')]
+    source_hdf5 = h5py.File(data_file, 'r')
     target_file = prefix + '-oversampled.h5'
     target_hdf5 = h5py.File(target_file, 'w')
     classes = source_hdf5['classes']
@@ -45,5 +45,5 @@ def oversample(train_file):
                 progress.update(target_i)
     source_hdf5.close()
     target_hdf5.close()
-    os.remove(train_file)
-    os.rename(target_file, train_file)
+    os.remove(data_file)
+    os.rename(target_file, data_file)
