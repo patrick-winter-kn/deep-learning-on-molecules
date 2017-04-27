@@ -9,7 +9,7 @@ def predict(test_file, model_file, predictions_file, batch_size):
     print('Predicting')
     test_hdf5 = h5py.File(test_file, 'r')
     predictions_hdf5 = h5py.File(predictions_file, 'w')
-    model = models.load_model(model_file, custom_objects={'sampling': cnn.Sampler().sampling})
+    model = models.load_model(model_file)
     smiles_matrix = test_hdf5['smiles_matrix']
     classes = test_hdf5['classes']
     predictions = predictions_hdf5.create_dataset('predictions', (classes.shape[0], classes.shape[1]))

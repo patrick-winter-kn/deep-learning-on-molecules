@@ -11,13 +11,13 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     train_hdf5 = h5py.File(train_file, 'r')
     smiles_matrix = train_hdf5['smiles_matrix']
     classes = train_hdf5['classes']
-    monitor_metric = 'loss'
+    monitor_metric = 'categorical_accuracy'
     val_data = None
     if val:
         val_hdf5 = h5py.File(validation_file, 'r')
         val_smiles_matrix = val_hdf5['smiles_matrix']
         val_classes = val_hdf5['classes']
-        monitor_metric = 'val_loss'
+        monitor_metric = 'val_categorical_accuracy'
         val_data = (val_smiles_matrix, val_classes)
     if path.isfile(model_file):
         print('Loading existing model ' + model_file)
