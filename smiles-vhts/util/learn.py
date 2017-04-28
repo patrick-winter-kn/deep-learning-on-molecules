@@ -1,8 +1,8 @@
-from models import cnn
+from models import cnn, mlp
 import h5py
 from os import path
 from keras import models
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Callback, EarlyStopping
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Callback, TensorBoard
 import numpy
 
 
@@ -27,10 +27,12 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
         model = cnn.create_model(smiles_matrix.shape[1:], classes.shape[1])
     checkpointer = ModelCheckpoint(filepath=model_file, monitor=monitor_metric, save_best_only=True)
     reduce_learning_rate = ReduceLROnPlateau(monitor=monitor_metric, factor=0.2, patience=2, min_lr=0.001)
+    tensorboard = TensorBoard(log_dir=model_file[:-3] + '-tensorboard', histogram_freq=1, write_graph=True,
+                              write_images=False, embeddings_freq=1)
     model_history = ModelHistory(model_file[:-3] + '-history.csv', val, monitor_metric)
     print('Training model for ' + str(epochs) + ' epochs')
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-              callbacks=[checkpointer, reduce_learning_rate, model_history], validation_data=val_data)
+              callbacks=[checkpointer, reduce_learning_rate, tensorboard, model_history], validation_data=val_data)
     train_hdf5.close()
 
 
