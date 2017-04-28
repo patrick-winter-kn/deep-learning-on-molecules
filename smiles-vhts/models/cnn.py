@@ -1,6 +1,5 @@
-from keras import backend
 from keras.models import Model
-from keras.layers import Input, Lambda
+from keras.layers import Input
 from keras.layers.core import Dense, Flatten, Dropout
 from keras.layers.convolutional import Convolution1D
 
