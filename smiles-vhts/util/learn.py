@@ -4,6 +4,7 @@ from os import path
 from keras import models
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Callback, TensorBoard
 import numpy
+import math
 
 
 def train(train_file, validation_file, model_file, epochs, batch_size):
@@ -29,20 +30,19 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     reduce_learning_rate = ReduceLROnPlateau(monitor=monitor_metric, factor=0.2, patience=2, min_lr=0.001)
     tensorboard = TensorBoard(log_dir=model_file[:-3] + '-tensorboard', histogram_freq=1, write_graph=True,
                               write_images=False, embeddings_freq=1)
-    model_history = ModelHistory(model_file[:-3] + '-history.csv', val, monitor_metric)
+    model_history = ModelHistory(model_file[:-3] + '-history.csv', monitor_metric)
     print('Training model for ' + str(epochs) + ' epochs')
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-              callbacks=[checkpointer, reduce_learning_rate, tensorboard, model_history], validation_data=val_data)
+              callbacks=[DrugDiscoveryEval(5), checkpointer, reduce_learning_rate, tensorboard, model_history], validation_data=val_data)
     train_hdf5.close()
 
 
 class ModelHistory(Callback):
 
-    def __init__(self, file_path, with_validation, monitor):
+    def __init__(self, file_path, monitor):
         super().__init__()
         self._file_ = None
         self._path_ = file_path
-        self._validation_ = with_validation
         self._monitor_ = monitor
         if 'loss' not in monitor:
             self._best_ = float('-inf')
@@ -51,25 +51,58 @@ class ModelHistory(Callback):
             self._best_ = float('inf')
             self._compare_ = numpy.less
         self._buffer_ = ''
+        self.log_keys = None
+        self.write_header = False
 
     def on_train_begin(self, logs=None):
-        write_header = not path.isfile(self._path_)
+        self.write_header = not path.isfile(self._path_)
         self._file_ = open(self._path_, 'a')
-        if write_header:
-            self._file_.write('loss,categorical_accuracy')
-            if self._validation_:
-                self._file_.write(',val_loss,val_categorical_accuracy')
-            self._file_.write('\n')
 
     def on_train_end(self, logs=None):
         self._file_.close()
 
     def on_epoch_end(self, epoch, logs=None):
-        self._buffer_ += str(logs['loss']) + ',' + str(logs['categorical_accuracy'])
-        if self._validation_:
-            self._buffer_ += ',' + str(logs['val_loss']) + ',' + str(logs['val_categorical_accuracy'])
-        self._buffer_ += '\n'
+        if self.log_keys is None:
+            self.log_keys = sorted(list(logs.keys()))
+            if self.write_header:
+                self._file_.write(','.join(self.log_keys) + '\n')
+        line = ''
+        for key in self.log_keys:
+            line += str(logs[key]) + ','
+        self._buffer_ += line[:-1] + '\n'
         if self._compare_(logs[self._monitor_], self._best_):
             self._best_ = logs[self._monitor_]
             self._file_.write(self._buffer_)
             self._buffer_ = ''
+
+
+class DrugDiscoveryEval(Callback):
+
+    def __init__(self, percent):
+        self.percent = percent
+        self.factor = percent * 0.01
+        self.randomly_found = None
+
+    def on_epoch_end(self, epoch, logs=None):
+        predictions = self.model.predict(self.validation_data[0])
+        # Get first column ([:,0], sort it (.argsort()) and reverse the order ([::-1]))
+        indices = predictions[:,0].argsort()[::-1]
+        found = 0
+        for i in range(math.floor(len(indices)*self.factor)):
+            row = self.validation_data[1][indices[i]]
+            # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
+            # This means the active value is higher than the inactive value
+            if numpy.where(row==max(row))[0]==0:
+                found += 1
+        ef = found / self.calc_randomly_found()
+        print('\nEnrichment Factor ' + str(self.percent) + '%: ' + str(ef))
+        logs['ef' + str(self.percent)] = numpy.float64(ef)
+
+    def calc_randomly_found(self):
+        if self.randomly_found is None:
+            positives = 0
+            for row in self.validation_data[1]:
+                if numpy.where(row==max(row))[0]==0:
+                    positives += 1
+            self.randomly_found = positives * self.factor
+        return self.randomly_found
