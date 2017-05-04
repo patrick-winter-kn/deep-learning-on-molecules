@@ -16,5 +16,5 @@ partition.write_partition(args.data, prefix + '-train.h5', prefix + '-smiles_mat
 partition.write_partition(args.data, prefix + '-test.h5', prefix + '-smiles_matrices.h5', 2)
 partition.write_partition(args.data, prefix + '-validate.h5', prefix + '-smiles_matrices.h5', 3)
 oversample.oversample(prefix + '-train.h5')
-if path.isfile(prefix + '-validate.h5'):
-    oversample.oversample(prefix + '-validate.h5')
+#if path.isfile(prefix + '-validate.h5'):
+#    oversample.oversample(prefix + '-validate.h5')

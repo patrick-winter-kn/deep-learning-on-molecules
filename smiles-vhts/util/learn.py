@@ -18,7 +18,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
         val_hdf5 = h5py.File(validation_file, 'r')
         val_smiles_matrix = val_hdf5['smiles_matrix']
         val_classes = val_hdf5['classes']
-        monitor_metric = 'val_categorical_accuracy'
+        monitor_metric = 'enrichment_auc'
         val_data = (val_smiles_matrix, val_classes)
     if path.isfile(model_file):
         print('Loading existing model ' + model_file)
@@ -81,12 +81,31 @@ class DrugDiscoveryEval(Callback):
     def __init__(self, percent):
         self.percent = percent
         self.factor = percent * 0.01
-        self.randomly_found = None
+        self.positives = None
 
     def on_epoch_end(self, epoch, logs=None):
         predictions = self.model.predict(self.validation_data[0])
         # Get first column ([:,0], sort it (.argsort()) and reverse the order ([::-1]))
         indices = predictions[:,0].argsort()[::-1]
+        ef = self.enrichment_factor(indices)
+        eauc = self.enrichment_auc(indices)
+        dr = self.diversity_ratio(predictions)
+        print('\nEnrichment Factor ' + str(self.percent) + '%: ' + str(ef))
+        print('Enrichment AUC: ' + str(eauc))
+        print('Diversity Ratio: ' + str(dr))
+        logs['enrichment_factor_' + str(self.percent)] = numpy.float64(ef)
+        logs['enrichment_auc'] = numpy.float64(eauc)
+        logs['diversity_ratio'] = numpy.float64(dr)
+
+    def positives_count(self):
+        if self.positives is None:
+            self.positives = 0
+            for row in self.validation_data[1]:
+                if numpy.where(row==max(row))[0]==0:
+                    self.positives += 1
+        return self.positives
+
+    def enrichment_factor(self, indices):
         found = 0
         for i in range(math.floor(len(indices)*self.factor)):
             row = self.validation_data[1][indices[i]]
@@ -94,15 +113,23 @@ class DrugDiscoveryEval(Callback):
             # This means the active value is higher than the inactive value
             if numpy.where(row==max(row))[0]==0:
                 found += 1
-        ef = found / self.calc_randomly_found()
-        print('\nEnrichment Factor ' + str(self.percent) + '%: ' + str(ef))
-        logs['ef' + str(self.percent)] = numpy.float64(ef)
+        return found / (self.positives_count() * self.factor)
 
-    def calc_randomly_found(self):
-        if self.randomly_found is None:
-            positives = 0
-            for row in self.validation_data[1]:
-                if numpy.where(row==max(row))[0]==0:
-                    positives += 1
-            self.randomly_found = positives * self.factor
-        return self.randomly_found
+    def enrichment_auc(self, indices):
+        found = 0
+        sum = 0
+        for i in range(len(indices)):
+            row = self.validation_data[1][indices[i]]
+            # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
+            # This means the active value is higher than the inactive value
+            if numpy.where(row==max(row))[0]==0:
+                found += 1
+            sum += found
+        # AUC = sum of found positives for every x / (positives * number of samples)
+        return sum / (self.positives_count() * len(self.validation_data[1]))
+
+    def diversity_ratio(self, predictions):
+        results = set()
+        for i in range(len(predictions)):
+            results.add(predictions[i][0])
+        return len(results)/len(predictions)
