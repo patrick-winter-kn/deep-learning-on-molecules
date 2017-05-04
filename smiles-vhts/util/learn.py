@@ -33,7 +33,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     model_history = ModelHistory(model_file[:-3] + '-history.csv', monitor_metric)
     print('Training model for ' + str(epochs) + ' epochs')
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-              callbacks=[DrugDiscoveryEval(5), checkpointer, reduce_learning_rate, tensorboard, model_history], validation_data=val_data)
+              callbacks=[DrugDiscoveryEval([5,10]), checkpointer, reduce_learning_rate, tensorboard, model_history], validation_data=val_data)
     train_hdf5.close()
 
 
@@ -78,23 +78,25 @@ class ModelHistory(Callback):
 
 class DrugDiscoveryEval(Callback):
 
-    def __init__(self, percent):
-        self.percent = percent
-        self.factor = percent * 0.01
+    def __init__(self, ef_percent):
+        self.ef_percent = ef_percent
         self.positives = None
 
     def on_epoch_end(self, epoch, logs=None):
         predictions = self.model.predict(self.validation_data[0])
         # Get first column ([:,0], sort it (.argsort()) and reverse the order ([::-1]))
         indices = predictions[:,0].argsort()[::-1]
-        ef = self.enrichment_factor(indices)
+        # Start with a new line, don't print right of the progressbar
+        print()
+        for percent in self.ef_percent:
+            ef = self.enrichment_factor(indices, percent)
+            print('Enrichment Factor ' + str(percent) + '%: ' + str(ef))
+            logs['enrichment_factor_' + str(percent)] = numpy.float64(ef)
         eauc = self.enrichment_auc(indices)
-        dr = self.diversity_ratio(predictions)
-        print('\nEnrichment Factor ' + str(self.percent) + '%: ' + str(ef))
         print('Enrichment AUC: ' + str(eauc))
-        print('Diversity Ratio: ' + str(dr))
-        logs['enrichment_factor_' + str(self.percent)] = numpy.float64(ef)
         logs['enrichment_auc'] = numpy.float64(eauc)
+        dr = self.diversity_ratio(predictions)
+        print('Diversity Ratio: ' + str(dr))
         logs['diversity_ratio'] = numpy.float64(dr)
 
     def positives_count(self):
@@ -105,15 +107,16 @@ class DrugDiscoveryEval(Callback):
                     self.positives += 1
         return self.positives
 
-    def enrichment_factor(self, indices):
+    def enrichment_factor(self, indices, percent):
+        ratio = percent * 0.01
         found = 0
-        for i in range(math.floor(len(indices)*self.factor)):
+        for i in range(math.floor(len(indices)*ratio)):
             row = self.validation_data[1][indices[i]]
             # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
             # This means the active value is higher than the inactive value
             if numpy.where(row==max(row))[0]==0:
                 found += 1
-        return found / (self.positives_count() * self.factor)
+        return found / (self.positives_count() * ratio)
 
     def enrichment_auc(self, indices):
         found = 0
@@ -125,8 +128,9 @@ class DrugDiscoveryEval(Callback):
             if numpy.where(row==max(row))[0]==0:
                 found += 1
             sum += found
-        # AUC = sum of found positives for every x / (positives * number of samples)
-        return sum / (self.positives_count() * len(self.validation_data[1]))
+        # AUC = sum of found positives for every x / (positives * (number of samples + 1))
+        # + 1 is added to the number of samples for the start with 0 samples selected
+        return sum / (self.positives_count() * (len(self.validation_data[1]) + 1))
 
     def diversity_ratio(self, predictions):
         results = set()
