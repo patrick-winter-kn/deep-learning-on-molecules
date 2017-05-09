@@ -2,42 +2,56 @@ import h5py
 from progressbar import ProgressBar
 
 
-def write_partition(source_file, target_file, smiles_matrices_file, partition):
-    print('Extracting partition ' + str(partition))
+def write_partitions(source_file, smiles_matrices_file, partition_names):
+    print('Extracting partitions')
+    prefix = source_file[:source_file.rfind('.')]
     source_hdf5 = h5py.File(source_file, 'r')
     smiles_matrices_hdf5 = h5py.File(smiles_matrices_file, 'r')
     partition_data = source_hdf5['partition']
     classes_data = source_hdf5['classes']
     smiles_matrix_data = smiles_matrices_hdf5['smiles_matrix']
-    partition_size = analyze_partition_size(partition_data, partition)
-    if partition_size > 0:
-        target_hdf5 = h5py.File(target_file, 'w')
-        smiles_matrix = target_hdf5.create_dataset('smiles_matrix', (partition_size, smiles_matrix_data.shape[1],
-                                                                     smiles_matrix_data.shape[2]),
-                                                   dtype=smiles_matrix_data.dtype)
-        classes = target_hdf5.create_dataset('classes', (partition_size, classes_data.shape[1]), dtype=classes_data.dtype)
-        print('Writing partition ' + str(partition) + ' data')
-        with ProgressBar(max_value=partition_size) as progress:
-            target_i = 0
-            for i in range(len(partition_data)):
-                if partition == partition_data[i]:
-                    smiles_matrix[target_i] = smiles_matrix_data[i]
-                    classes[target_i] = classes_data[i]
-                    target_i += 1
-                    progress.update(target_i)
-        target_hdf5.close()
-    else:
-        print('Partition ' + str(partition) + ' not found')
-    source_hdf5.close()
-    smiles_matrices_hdf5.close()
-
-
-def analyze_partition_size(partition_data, partition):
-    print('Analyzing partition size')
-    partition_size = 0
+    partition_sizes = analyze_partition_sizes(partition_data)
+    target_hdf5s = {}
+    target_classes = {}
+    target_matrices = {}
+    target_i = {}
+    print('Found the following partitions:')
+    for partition in partition_sizes.keys():
+        if partition in partition_names:
+            name = partition_names[partition]
+        else:
+            name = str(partition)
+        print(name + '(' + str(partition_sizes[partition]) + ')')
+        target_hdf5s[partition] = h5py.File(prefix + '-' + name + '.h5', 'w')
+        target_matrices[partition] = target_hdf5s[partition]\
+            .create_dataset('smiles_matrix', (partition_sizes[partition], smiles_matrix_data.shape[1],
+                                                       smiles_matrix_data.shape[2]), dtype=smiles_matrix_data.dtype)
+        target_classes[partition] = target_hdf5s[partition]\
+            .create_dataset('classes', (partition_sizes[partition], classes_data.shape[1]), dtype=classes_data.dtype)
+        target_i[partition] = 0
+    print('Writing partitions')
     with ProgressBar(max_value=len(partition_data)) as progress:
         for i in range(len(partition_data)):
-            if partition == partition_data[i]:
-                partition_size += 1
+            partition = partition_data[i][0]
+            target_matrices[partition][target_i[partition]] = smiles_matrix_data[i]
+            target_classes[partition][target_i[partition]] = classes_data[i]
+            target_i[partition] += 1
             progress.update(i + 1)
-    return partition_size
+    for target_hdf5 in target_hdf5s.values():
+        target_hdf5.close()
+    source_hdf5.close()
+    smiles_matrices_hdf5.close()
+    print('Finished extracting partitions')
+
+
+def analyze_partition_sizes(partition_data):
+    print('Analyzing partition sizes')
+    partition_sizes = {}
+    with ProgressBar(max_value=len(partition_data)) as progress:
+        for i in range(len(partition_data)):
+            partition = partition_data[i][0]
+            if not partition in partition_sizes:
+                partition_sizes[partition] = 0
+            partition_sizes[partition] += 1
+            progress.update(i + 1)
+    return partition_sizes

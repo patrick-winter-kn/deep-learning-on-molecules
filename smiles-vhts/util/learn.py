@@ -84,12 +84,13 @@ class DrugDiscoveryEval(Callback):
         self.positives = None
 
     def on_epoch_end(self, epoch, logs=None):
+        # Start with a new line, don't print right of the progressbar
+        print()
+        print('Predicting with intermediate model...')
         predictions = self.model.predict(self.validation_data[0])
         # Get first column ([:,0], sort it (.argsort()) and reverse the order ([::-1]))
         indices = predictions[:,0].argsort()[::-1]
         efs, eauc = self.enrichment_stats(indices)
-        # Start with a new line, don't print right of the progressbar
-        print()
         for percent in efs.keys():
             print('Enrichment Factor ' + str(percent) + '%: ' + str(efs[percent]))
             logs['enrichment_factor_' + str(percent)] = numpy.float64(efs[percent])
