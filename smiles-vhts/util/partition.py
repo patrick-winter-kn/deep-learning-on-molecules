@@ -25,7 +25,7 @@ def write_partitions(source_file, smiles_matrices_file, partition_names):
         target_hdf5s[partition] = h5py.File(prefix + '-' + name + '.h5', 'w')
         target_matrices[partition] = target_hdf5s[partition]\
             .create_dataset('smiles_matrix', (partition_sizes[partition], smiles_matrix_data.shape[1],
-                                                       smiles_matrix_data.shape[2]), dtype=smiles_matrix_data.dtype)
+                                              smiles_matrix_data.shape[2]), dtype=smiles_matrix_data.dtype)
         target_classes[partition] = target_hdf5s[partition]\
             .create_dataset('classes', (partition_sizes[partition], classes_data.shape[1]), dtype=classes_data.dtype)
         target_i[partition] = 0
@@ -50,7 +50,7 @@ def analyze_partition_sizes(partition_data):
     with ProgressBar(max_value=len(partition_data)) as progress:
         for i in range(len(partition_data)):
             partition = partition_data[i][0]
-            if not partition in partition_sizes:
+            if partition not in partition_sizes:
                 partition_sizes[partition] = 0
             partition_sizes[partition] += 1
             progress.update(i + 1)

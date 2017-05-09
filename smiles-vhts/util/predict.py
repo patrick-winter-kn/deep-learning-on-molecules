@@ -1,5 +1,4 @@
 import h5py
-from models import cnn
 from keras import models
 from progressbar import ProgressBar
 import math

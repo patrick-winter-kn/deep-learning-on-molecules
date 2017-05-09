@@ -23,7 +23,8 @@ def oversample(data_file):
     difference = abs(class_zero_count - class_one_count)
     oversampled_classes = target_hdf5.create_dataset('classes', (classes.shape[0] + difference, classes.shape[1]))
     oversampled_smiles_matrix = target_hdf5.create_dataset('smiles_matrix', (smiles_matrix.shape[0] + difference,
-                                                                    smiles_matrix.shape[1], smiles_matrix.shape[2]))
+                                                                             smiles_matrix.shape[1],
+                                                                             smiles_matrix.shape[2]))
     left_difference = difference
     with ProgressBar(max_value=oversampled_classes.shape[0]) as progress:
         if class_zero_count < class_one_count:

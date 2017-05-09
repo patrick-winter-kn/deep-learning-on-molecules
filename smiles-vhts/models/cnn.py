@@ -2,7 +2,6 @@ from keras.models import Model
 from keras.layers import Input
 from keras.layers.core import Dense, Flatten, Dropout
 from keras.layers.convolutional import Convolution1D
-from keras.layers.pooling import MaxPooling1D
 
 
 def create_model(input_shape, output_size):
@@ -23,7 +22,7 @@ def create_model(input_shape, output_size):
     l = Dropout(0.2, name='dropout_dense_3')(l)
     l = Dense(64, activation='relu', name='dense_4')(l)
     l = Dropout(0.2, name='dropout_dense_4')(l)
-    output_layer =Dense(output_size, activation='softmax', name='output')(l)
+    output_layer = Dense(output_size, activation='softmax', name='output')(l)
     model = Model(inputs=input_layer, outputs=output_layer)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
     return model

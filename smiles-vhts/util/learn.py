@@ -1,4 +1,4 @@
-from models import cnn, mlp
+from models import cnn
 import h5py
 from os import path
 from keras import models
@@ -33,7 +33,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     model_history = ModelHistory(model_file[:-3] + '-history.csv', monitor_metric)
     print('Training model for ' + str(epochs) + ' epochs')
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-              callbacks=[DrugDiscoveryEval([5,10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
+              callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
               validation_data=val_data)
     train_hdf5.close()
 
@@ -80,6 +80,7 @@ class ModelHistory(Callback):
 class DrugDiscoveryEval(Callback):
 
     def __init__(self, ef_percent):
+        super().__init__()
         self.ef_percent = ef_percent
         self.positives = None
 
@@ -89,7 +90,7 @@ class DrugDiscoveryEval(Callback):
         print('Predicting with intermediate model...')
         predictions = self.model.predict(self.validation_data[0])
         # Get first column ([:,0], sort it (.argsort()) and reverse the order ([::-1]))
-        indices = predictions[:,0].argsort()[::-1]
+        indices = predictions[:, 0].argsort()[::-1]
         efs, eauc = self.enrichment_stats(indices)
         for percent in efs.keys():
             print('Enrichment Factor ' + str(percent) + '%: ' + str(efs[percent]))
@@ -104,7 +105,7 @@ class DrugDiscoveryEval(Callback):
         if self.positives is None:
             self.positives = 0
             for row in self.validation_data[1]:
-                if numpy.where(row==max(row))[0]==0:
+                if numpy.where(row == max(row))[0] == 0:
                     self.positives += 1
         return self.positives
 
@@ -114,27 +115,28 @@ class DrugDiscoveryEval(Callback):
         for percent in self.ef_percent:
             efs[percent] = 0
         found = 0
-        sum = 0
+        curve_sum = 0
         for i in range(len(indices)):
             row = self.validation_data[1][indices[i]]
             # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
             # This means the active value is higher than the inactive value
-            if numpy.where(row==max(row))[0]==0:
+            if numpy.where(row == max(row))[0] == 0:
                 found += 1
                 for percent in efs.keys():
                     # If i is still part of the fraction count the number of founds up
                     if i < math.floor(len(indices)*(percent*0.01)):
                         efs[percent] += 1
-            sum += found
+            curve_sum += found
         # AUC = sum of found positives for every x / (positives * (number of samples + 1))
         # + 1 is added to the number of samples for the start with 0 samples selected
-        auc = sum / (self.positives_count() * (len(self.validation_data[1]) + 1))
+        auc = curve_sum / (self.positives_count() * (len(self.validation_data[1]) + 1))
         # Turn number of found positives into enrichment factor by dividing the number of positives found at random
         for percent in efs.keys():
             efs[percent] /= (self.positives_count() * (percent * 0.01))
         return efs, auc
 
-    def diversity_ratio(self, predictions):
+    @staticmethod
+    def diversity_ratio(predictions):
         results = set()
         for i in range(len(predictions)):
             results.add(predictions[i][0])

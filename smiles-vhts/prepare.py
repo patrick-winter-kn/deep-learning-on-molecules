@@ -1,6 +1,5 @@
 import argparse
 from util import preprocess, partition, oversample
-from os import path
 
 
 def get_arguments():
@@ -12,5 +11,5 @@ def get_arguments():
 args = get_arguments()
 prefix = args.data[:args.data.rfind('.')]
 preprocess.preprocess(args.data, prefix + '-indices.h5', prefix + '-smiles_matrices.h5')
-partition.write_partitions(args.data, prefix + '-smiles_matrices.h5', {1:'train', 2:'test', 3:'validate'})
+partition.write_partitions(args.data, prefix + '-smiles_matrices.h5', {1: 'train', 2: 'test', 3: 'validate'})
 oversample.oversample(prefix + '-train.h5')
