@@ -91,3 +91,6 @@ ENV/
 # Jupyter notebook
 .ipynb_checkpoints
 
+# PyCharm workspace
+workspace.xml
+
