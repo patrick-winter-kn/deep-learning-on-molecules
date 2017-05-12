@@ -32,10 +32,26 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
                               write_images=False, embeddings_freq=1)
     model_history = ModelHistory(model_file[:-3] + '-history.csv', monitor_metric)
     print('Training model for ' + str(epochs) + ' epochs')
+    type(classes).argmax = argmax
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
               callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
               validation_data=val_data)
     train_hdf5.close()
+
+
+def calculate_class_weights(classes):
+    class_weights = {}
+    targets = int(classes.shape[1] / 2)
+    for offset in range(targets):
+        offset *= 2
+        class_zero_sum = 0
+        class_one_sum = 0
+        for i in range(classes.shape[0]):
+            class_zero_sum += classes[i][offset]
+            class_one_sum += classes[i][offset + 1]
+        class_weights[offset] = classes.shape[0]/class_zero_sum
+        class_weights[offset + 1] = classes.shape[0]/class_one_sum
+    return class_weights
 
 
 class ModelHistory(Callback):
@@ -141,3 +157,20 @@ class DrugDiscoveryEval(Callback):
         for i in range(len(predictions)):
             results.add(predictions[i][0])
         return len(results)/len(predictions)
+
+
+def argmax(self, axis=None, out=None):
+    # This is only implemented for axis=1
+    if not hasattr(self, '_preprocessed_argmax_'):
+        result = []
+        for value in self:
+            max_index = 0
+            max_value = value[0]
+            for i in range(1, len(value)):
+                inner_value = value[i]
+                if inner_value > max_value:
+                    max_value = inner_value
+                    max_index = i
+            result.append(max_index)
+        self._preprocessed_argmax_ = numpy.array(result)
+    return self._preprocessed_argmax_
