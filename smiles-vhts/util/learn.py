@@ -12,7 +12,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     train_hdf5 = h5py.File(train_file, 'r')
     smiles_matrix = train_hdf5['smiles_matrix']
     classes = train_hdf5['classes']
-    monitor_metric = 'categorical_accuracy'
+    monitor_metric = 'accuracy'
     val_data = None
     if val:
         val_hdf5 = h5py.File(validation_file, 'r')
@@ -33,7 +33,8 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     model_history = ModelHistory(model_file[:-3] + '-history.csv', monitor_metric)
     print('Training model for ' + str(epochs) + ' epochs')
     type(classes).argmax = argmax
-    model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
+    class_weights = calculate_class_weights(classes)
+    model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size, class_weight=class_weights,
               callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
               validation_data=val_data)
     train_hdf5.close()

@@ -24,7 +24,7 @@ def create_model(input_shape, output_size):
     l = Dropout(0.2, name='dropout_dense_4')(l)
     output_layer = Dense(output_size, activation='softmax', name='output')(l)
     model = Model(inputs=input_layer, outputs=output_layer)
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
 
