@@ -2,13 +2,18 @@ import h5py
 from progressbar import ProgressBar
 
 
-def write_partitions(source_file, smiles_matrices_file, partition_names):
+def write_partitions(source_file, smiles_matrices_file, partition_names, id=None):
     print('Extracting partitions')
     prefix = source_file[:source_file.rfind('.')]
     source_hdf5 = h5py.File(source_file, 'r')
     smiles_matrices_hdf5 = h5py.File(smiles_matrices_file, 'r')
-    partition_data = source_hdf5['partition']
-    classes_data = source_hdf5['classes']
+    partition_dataset = 'partition'
+    classes_dataset = 'classes'
+    if id:
+        partition_dataset = id + '-' + partition_dataset
+        classes_dataset = id + '-' + classes_dataset
+    partition_data = source_hdf5[partition_dataset]
+    classes_data = source_hdf5[classes_dataset]
     smiles_matrix_data = smiles_matrices_hdf5['smiles_matrix']
     partition_sizes = analyze_partition_sizes(partition_data)
     target_hdf5s = {}
@@ -21,6 +26,8 @@ def write_partitions(source_file, smiles_matrices_file, partition_names):
             name = partition_names[partition]
         else:
             name = str(partition)
+        if id:
+            name = id + '-' + name
         print(name + '(' + str(partition_sizes[partition]) + ')')
         target_hdf5s[partition] = h5py.File(prefix + '-' + name + '.h5', 'w')
         target_matrices[partition] = target_hdf5s[partition]\
