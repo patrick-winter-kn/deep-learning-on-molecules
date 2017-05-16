@@ -1,84 +1,53 @@
-from models import cnn
 import h5py
 from os import path
-from keras import models
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Callback, TensorBoard
+from keras.callbacks import Callback
 import numpy
 import math
 from data_structures import reference_data_set
+from models import cnn_shared
 
 
-def train(train_file, validation_file, model_file, epochs, batch_size):
-    smiles_path = train_file[:train_file.rfind('-')]
-    identifier = smiles_path[smiles_path.rfind('-')+1:]
-    smiles_path = smiles_path[:smiles_path.rfind('-')]
-    classes_path = smiles_path + '.h5'
-    smiles_path += '-smiles_matrices.h5'
-    classes_hdf5 = h5py.File(classes_path, 'r')
+def train(data_file, identifier, use_validation, batch_size, model_id):
+    prefix = data_file[:data_file.rfind('.')]
+    classes_hdf5 = h5py.File(data_file, 'r')
+    smiles_path = prefix + '-smiles_matrices.h5'
     smiles_hdf5 = h5py.File(smiles_path, 'r')
-    val = validation_file is not None
-    train_hdf5 = h5py.File(train_file, 'r')
+    train_path = prefix + '-' + identifier + '-train.h5'
+    train_hdf5 = h5py.File(train_path, 'r')
+    model_path = prefix + '-' + identifier + '-model-' + model_id + '.h5'
+    feature_model_path = prefix + '-model-' + model_id + '.h5'
     smiles_matrix = reference_data_set.ReferenceDataSet(train_hdf5['ref'], smiles_hdf5['smiles_matrix'])
     classes = reference_data_set.ReferenceDataSet(train_hdf5['ref'], classes_hdf5[identifier + '-classes'])
-    monitor_metric = 'acc'
     val_data = None
-    if val:
-        val_hdf5 = h5py.File(validation_file, 'r')
-        val_smiles_matrix = reference_data_set.ReferenceDataSet(val_hdf5['ref'], smiles_hdf5['smiles_matrix'])
-        val_classes = reference_data_set.ReferenceDataSet(val_hdf5['ref'], classes_hdf5[identifier + '-classes'])
-        monitor_metric = 'enrichment_auc'
+    if use_validation:
+        validation_path = prefix + '-' + identifier + '-validate.h5'
+        validation_hdf5 = h5py.File(validation_path, 'r')
+        val_smiles_matrix = reference_data_set.ReferenceDataSet(validation_hdf5['ref'], smiles_hdf5['smiles_matrix'])
+        val_classes = reference_data_set.ReferenceDataSet(validation_hdf5['ref'], classes_hdf5[identifier + '-classes'])
         val_data = (val_smiles_matrix, val_classes)
-    if path.isfile(model_file):
-        print('Loading existing model ' + model_file)
-        model = models.load_model(model_file)
-    else:
-        print('Creating new model')
-        model = cnn.create_model(smiles_matrix.shape[1:], classes.shape[1])
-    checkpointer = ModelCheckpoint(filepath=model_file, monitor=monitor_metric, save_best_only=True)
-    reduce_learning_rate = ReduceLROnPlateau(monitor=monitor_metric, factor=0.2, patience=2, min_lr=0.001)
-    tensorboard = TensorBoard(log_dir=model_file[:-3] + '-tensorboard', histogram_freq=1, write_graph=True,
-                              write_images=False, embeddings_freq=1)
-    model_history = ModelHistory(model_file[:-3] + '-history.csv', monitor_metric)
-    print('Training model for ' + str(epochs) + ' epochs')
-    type(classes).argmax = argmax
-    #class_weights = calculate_class_weights(classes)
-    model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-              callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
-              validation_data=val_data)
-    train_hdf5.close()
+    model = cnn_shared.SharedFeaturesModel(smiles_matrix.shape[1:], classes.shape[1])
+    if path.isfile(model_path):
+        model.load_predictions_model(model_path)
+    if path.isfile(feature_model_path):
+        model.load_features_model(feature_model_path)
+    model_history = ModelHistory(model_path[:-3] + '-history.csv')
+    model.predictions_model.fit(smiles_matrix, classes, epochs=1, shuffle='batch', batch_size=batch_size,
+              callbacks=[DrugDiscoveryEval([5, 10]), model_history], validation_data=val_data)
+    model.save_predictions_model(model_path)
+    model.save_features_model(feature_model_path)
     classes_hdf5.close()
     smiles_hdf5.close()
-
-
-def calculate_class_weights(classes):
-    class_weights = {}
-    targets = int(classes.shape[1] / 2)
-    for offset in range(targets):
-        offset *= 2
-        class_zero_sum = 0
-        class_one_sum = 0
-        for i in range(classes.shape[0]):
-            class_zero_sum += classes[i][offset]
-            class_one_sum += classes[i][offset + 1]
-        class_weights[offset] = classes.shape[0]/class_zero_sum
-        class_weights[offset + 1] = classes.shape[0]/class_one_sum
-    return class_weights
+    train_hdf5.close()
+    if use_validation:
+        validation_hdf5.close()
 
 
 class ModelHistory(Callback):
 
-    def __init__(self, file_path, monitor):
+    def __init__(self, file_path):
         super().__init__()
         self._file_ = None
         self._path_ = file_path
-        self._monitor_ = monitor
-        if 'loss' not in monitor:
-            self._best_ = float('-inf')
-            self._compare_ = numpy.greater
-        else:
-            self._best_ = float('inf')
-            self._compare_ = numpy.less
-        self._buffer_ = ''
         self.log_keys = None
         self.write_header = False
 
@@ -97,11 +66,7 @@ class ModelHistory(Callback):
         line = ''
         for key in self.log_keys:
             line += str(logs[key]) + ','
-        self._buffer_ += line[:-1] + '\n'
-        if self._compare_(logs[self._monitor_], self._best_):
-            self._best_ = logs[self._monitor_]
-            self._file_.write(self._buffer_)
-            self._buffer_ = ''
+        self._file_.write(line[:-1] + '\n')
 
 
 class DrugDiscoveryEval(Callback):
@@ -169,20 +134,3 @@ class DrugDiscoveryEval(Callback):
         for i in range(len(predictions)):
             results.add(predictions[i][0])
         return len(results)/len(predictions)
-
-
-def argmax(self, axis=None, out=None):
-    # This is only implemented for axis=1
-    if not hasattr(self, '_preprocessed_argmax_'):
-        result = []
-        for value in self:
-            max_index = 0
-            max_value = value[0]
-            for i in range(1, len(value)):
-                inner_value = value[i]
-                if inner_value > max_value:
-                    max_value = inner_value
-                    max_index = i
-            result.append(max_index)
-        self._preprocessed_argmax_ = numpy.array(result)
-    return self._preprocessed_argmax_
