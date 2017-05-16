@@ -11,14 +11,14 @@ class SharedFeaturesModel():
         self.predictions_model = self.append_predictions_model(input_layer, features_layer, output_size)
         self.predictions_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-    def save_features_model(self, weights_file):
-        self.features_model.save_weights(weights_file)
+    def save_features_model(self, model_file):
+        self.features_model.save(model_file)
 
     def load_features_model(self, weights_file):
         self.features_model.load_weights(weights_file, by_name=True)
 
-    def save_predictions_model(self, weights_file):
-        self.predictions_model.save_weights(weights_file)
+    def save_predictions_model(self, model_file):
+        self.predictions_model.save(model_file)
 
     def load_predictions_model(self, weights_file):
         self.predictions_model.load_weights(weights_file, by_name=True)
