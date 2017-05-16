@@ -13,15 +13,14 @@ class ReferenceDataSet(dataset.Dataset):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            start = item.start
-            if not start:
-                start = 0
-            stop = item.stop
-            if not stop:
-                stop = len(self.reference)
-            item = slice(start, stop, None)
-            maximum = max(item.start, item.stop)
-            return [self.data[self.reference[i]] for i in range(*item.indices(maximum+1))]
+            start = item.start or 0
+            stop = item.stop or len(self.reference)
+            step = item.step or 1
+            if start < 0:
+                start = len(self.reference) + start
+            if stop < 0:
+                stop = len(self.reference) + stop
+            return [self.data[self.reference[i]] for i in range(start, stop, step)]
         elif isinstance(item, list):
             return [self.data[self.reference[i]] for i in item]
         else:
