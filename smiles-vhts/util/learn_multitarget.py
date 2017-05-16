@@ -5,19 +5,27 @@ from keras import models
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Callback, TensorBoard
 import numpy
 import math
+from data_structures import reference_data_set
 
 
 def train(train_file, validation_file, model_file, epochs, batch_size):
+    smiles_path = train_file[:train_file.rfind('-')]
+    identifier = smiles_path[smiles_path.rfind('-')+1:]
+    smiles_path = smiles_path[:smiles_path.rfind('-')]
+    classes_path = smiles_path + '.h5'
+    smiles_path += '-smiles_matrices.h5'
+    classes_hdf5 = h5py.File(classes_path, 'r')
+    smiles_hdf5 = h5py.File(smiles_path, 'r')
     val = validation_file is not None
     train_hdf5 = h5py.File(train_file, 'r')
-    smiles_matrix = train_hdf5['smiles_matrix']
-    classes = train_hdf5['classes']
+    smiles_matrix = reference_data_set.ReferenceDataSet(train_hdf5['ref'], smiles_hdf5['smiles_matrix'])
+    classes = reference_data_set.ReferenceDataSet(train_hdf5['ref'], classes_hdf5[identifier + '-classes'])
     monitor_metric = 'acc'
     val_data = None
     if val:
         val_hdf5 = h5py.File(validation_file, 'r')
-        val_smiles_matrix = val_hdf5['smiles_matrix']
-        val_classes = val_hdf5['classes']
+        val_smiles_matrix = reference_data_set.ReferenceDataSet(val_hdf5['ref'], smiles_hdf5['smiles_matrix'])
+        val_classes = reference_data_set.ReferenceDataSet(val_hdf5['ref'], classes_hdf5[identifier + '-classes'])
         monitor_metric = 'enrichment_auc'
         val_data = (val_smiles_matrix, val_classes)
     if path.isfile(model_file):
@@ -33,11 +41,13 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     model_history = ModelHistory(model_file[:-3] + '-history.csv', monitor_metric)
     print('Training model for ' + str(epochs) + ' epochs')
     type(classes).argmax = argmax
-    class_weights = calculate_class_weights(classes)
-    model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size, class_weight=class_weights,
+    #class_weights = calculate_class_weights(classes)
+    model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
               callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
               validation_data=val_data)
     train_hdf5.close()
+    classes_hdf5.close()
+    smiles_hdf5.close()
 
 
 def calculate_class_weights(classes):
