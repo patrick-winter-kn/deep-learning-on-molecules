@@ -11,9 +11,11 @@ def get_arguments():
     parser = argparse.ArgumentParser(description='Train a model')
     parser.add_argument('data', type=str, help='Training data set')
     parser.add_argument('model_id', type=str, help='Model')
+    parser.add_argument('--repeats', type=int, default=1, help='Number of repeated training over the different targets')
     parser.add_argument('--epochs', type=int, default=1, help='Number of epochs')
     parser.add_argument('--batch_size', type=int, default=100, help='Size of a batch')
     parser.add_argument('--validation', action='store_true', help='Use validation data set')
+    parser.add_argument('--freeze_features', action='store_true', help='Do not train the features model')
     return parser.parse_args()
 
 
@@ -25,8 +27,9 @@ for data_set in source_hdf5.keys():
     data_set = str(data_set)
     if regex.match(data_set):
         ids.append(data_set[:-8])
-for i in range(args.epochs):
+for i in range(args.repeats):
     for ident in ids:
-        learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.model_id)
+        learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.epochs, args.model_id,
+                                args.freeze_features)
 source_hdf5.close()
 gc.collect()
