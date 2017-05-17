@@ -5,7 +5,7 @@ import math
 
 
 def oversample(refs_file, data_file, identifier=None):
-    print('Oversampling data in ' + data_file)
+    print('Oversampling data in ' + refs_file)
     # This is currently only implemented for 2 classes
     prefix = refs_file[:refs_file.rfind('.')]
     refs_hdf5 = h5py.File(refs_file, 'r')
