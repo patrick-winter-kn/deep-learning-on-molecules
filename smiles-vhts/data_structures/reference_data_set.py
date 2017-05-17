@@ -1,4 +1,5 @@
 from h5py._hl import dataset
+import numpy
 
 
 class ReferenceDataSet(dataset.Dataset):
@@ -20,9 +21,9 @@ class ReferenceDataSet(dataset.Dataset):
                 start = len(self.reference) + start
             if stop < 0:
                 stop = len(self.reference) + stop
-            return [self.data[self.reference[i]] for i in range(start, stop, step)]
+            return numpy.array([self.data[self.reference[i]] for i in range(start, stop, step)])
         elif isinstance(item, list):
-            return [self.data[self.reference[i]] for i in item]
+            return numpy.array([self.data[self.reference[i]] for i in item])
         else:
             return self.data[self.reference[item]]
 
