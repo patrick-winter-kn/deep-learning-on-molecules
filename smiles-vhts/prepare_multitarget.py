@@ -1,5 +1,5 @@
 import argparse
-from util import preprocess, partition_ref, oversample_ref
+from util import preprocess, partition_ref, oversample_ref, shuffle
 import h5py
 import re
 
@@ -9,6 +9,7 @@ def get_arguments():
     parser.add_argument('data', type=str, help='The data set containing the SMILES, class probability and partitioning')
     parser.add_argument('--oversample', action='store_true',
                         help='Oversample underrepresented classes in the training dataset')
+    parser.add_argument('--shuffle', action='store_true', help='Shuffle the data sets')
     return parser.parse_args()
 
 
@@ -28,3 +29,7 @@ for ident in ids:
 if args.oversample:
     for ident in ids:
         oversample_ref.oversample(prefix + '-' + ident + '-train.h5', args.data, ident)
+if args.shuffle:
+    for ident in ids:
+        for suffix in {'train', 'test', 'validate'}:
+            shuffle.shuffle(prefix + '-' + ident + '-' + suffix + '.h5')
