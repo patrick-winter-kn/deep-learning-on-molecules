@@ -1,5 +1,5 @@
-import h5py
 import numpy
+import h5py
 from progressbar import ProgressBar
 
 

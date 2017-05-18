@@ -1,10 +1,10 @@
-from models import cnn
-import h5py
 from os import path
-from keras import models
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Callback, TensorBoard
-import numpy
 import math
+import numpy
+import h5py
+from keras import models
+from keras.callbacks import Callback, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
+from models import cnn
 
 
 def train(train_file, validation_file, model_file, epochs, batch_size):
@@ -142,7 +142,7 @@ class DrugDiscoveryEval(Callback):
                 found += 1
                 for percent in efs.keys():
                     # If i is still part of the fraction count the number of founds up
-                    if i < math.floor(len(indices)*(percent*0.01)):
+                    if i < int(math.floor(len(indices)*(percent*0.01))):
                         efs[percent] += 1
             curve_sum += found
         # AUC = sum of found positives for every x / (positives * (number of samples + 1))

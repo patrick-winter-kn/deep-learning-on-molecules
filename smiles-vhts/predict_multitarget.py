@@ -1,17 +1,17 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import gc
-import argparse
-from util import predict_multitarget
-import h5py
+import os
 import re
+import h5py
+import argparse
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+from util import predict_multitarget
 
 
 def get_arguments():
-    parser = argparse.ArgumentParser(description='Predict')
-    parser.add_argument('data', type=str, help='The source data')
+    parser = argparse.ArgumentParser(description='Predict all targets contained in the input file')
+    parser.add_argument('data', type=str, help='The source data file')
     parser.add_argument('model_id', type=str, help='ID of the models')
-    parser.add_argument('--batch_size', type=int, default=100, help='Size of the batches')
+    parser.add_argument('--batch_size', type=int, default=100, help='Size of the batches (default: 100)')
     return parser.parse_args()
 
 

@@ -1,6 +1,6 @@
+import random
 import h5py
 from progressbar import ProgressBar
-import random
 
 
 def shuffle(data_file, data_sets=None, seed=42):

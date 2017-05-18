@@ -1,10 +1,10 @@
 from keras.models import Model
 from keras.layers import Input
-from keras.layers.core import Dense, Dropout, Flatten
+from keras.layers.core import Dense, Flatten, Dropout
 from keras.layers.convolutional import Convolution1D
 
 
-class SharedFeaturesModel():
+class SharedFeaturesModel:
 
     def __init__(self, input_shape, output_size, train_features_model=True):
         self.features_model, input_layer, features_layer = self.create_features_model(input_shape, train_features_model)
@@ -23,7 +23,8 @@ class SharedFeaturesModel():
     def load_predictions_model(self, weights_file):
         self.predictions_model.load_weights(weights_file, by_name=True)
 
-    def create_features_model(self, input_shape, trainable):
+    @staticmethod
+    def create_features_model(input_shape, trainable):
         input_layer = Input(shape=input_shape, name='input')
         l = Dropout(0.2, name='dropout_input', trainable=trainable)(input_layer)
         l = Convolution1D(4, 4, activation='relu', name='convolution_1', trainable=trainable)(l)
@@ -36,7 +37,8 @@ class SharedFeaturesModel():
         model = Model(inputs=input_layer, outputs=features_layer)
         return model, input_layer, features_layer
 
-    def append_predictions_model(self, input_layer, features_layer, output_size):
+    @staticmethod
+    def append_predictions_model(input_layer, features_layer, output_size):
         l = Dense(435, activation='relu', name='dense_1')(features_layer)
         l = Dropout(0.2, name='dropout_dense_1')(l)
         l = Dense(292, activation='relu', name='dense_2')(l)

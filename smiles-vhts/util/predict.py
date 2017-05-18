@@ -1,7 +1,7 @@
-import h5py
-from keras import models
-from progressbar import ProgressBar
 import math
+import h5py
+from progressbar import ProgressBar
+from keras import models
 
 
 def predict(test_file, model_file, predictions_file, batch_size):
@@ -13,7 +13,7 @@ def predict(test_file, model_file, predictions_file, batch_size):
     classes = test_hdf5['classes']
     predictions = predictions_hdf5.create_dataset('predictions', (classes.shape[0], classes.shape[1]))
     with ProgressBar(max_value=len(smiles_matrix)) as progress:
-        for i in range(math.ceil(smiles_matrix.shape[0]/batch_size)):
+        for i in range(int(math.ceil(smiles_matrix.shape[0]/batch_size))):
             start = i * batch_size
             end = min(smiles_matrix.shape[0], (i + 1) * batch_size)
             results = model.predict(smiles_matrix[start:end])

@@ -1,7 +1,7 @@
 import os
+import math
 import h5py
 from progressbar import ProgressBar
-import math
 
 
 def oversample(refs_file, data_file, identifier=None):
@@ -30,9 +30,9 @@ def oversample(refs_file, data_file, identifier=None):
     left_difference = difference
     with ProgressBar(max_value=oversampled_ref.shape[0]) as progress:
         if class_zero_count < class_one_count:
-            copies_per_instance = math.ceil(class_one_count / class_zero_count)
+            copies_per_instance = int(math.ceil(class_one_count / class_zero_count))
         else:
-            copies_per_instance = math.ceil(class_zero_count / class_one_count)
+            copies_per_instance = int(math.ceil(class_zero_count / class_one_count))
         target_i = 0
         for i in range(len(ref)):
             value = classes[ref[i]]

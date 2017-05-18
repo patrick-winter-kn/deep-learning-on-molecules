@@ -3,10 +3,10 @@ from util import preprocess, partition, oversample
 
 
 def get_arguments():
-    parser = argparse.ArgumentParser(description='Prepares the data set for training')
-    parser.add_argument('data', type=str, help='The data set containing the SMILES, class probability and partitioning')
+    parser = argparse.ArgumentParser(description='Prepares the given data set for training')
+    parser.add_argument('data', type=str, help='The data set containing the SMILES, classes and partitions')
     parser.add_argument('--oversample', action='store_true',
-                        help='Oversample underrepresented classes in the training dataset')
+                        help='Oversample underrepresented classes in the training dataset (default: False)')
     return parser.parse_args()
 
 

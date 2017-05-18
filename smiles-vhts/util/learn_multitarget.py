@@ -1,8 +1,8 @@
-import h5py
 from os import path
-from keras.callbacks import Callback
-import numpy
 import math
+import numpy
+import h5py
+from keras.callbacks import Callback
 from data_structures import reference_data_set
 from models import cnn_shared
 
@@ -32,7 +32,7 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
         model.load_features_model(feature_model_path)
     model_history = ModelHistory(model_path[:-3] + '-history.csv')
     model.predictions_model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-              callbacks=[DrugDiscoveryEval([5, 10]), model_history], validation_data=val_data)
+                                callbacks=[DrugDiscoveryEval([5, 10]), model_history], validation_data=val_data)
     model.save_predictions_model(model_path)
     model.save_features_model(feature_model_path)
     classes_hdf5.close()
@@ -117,7 +117,7 @@ class DrugDiscoveryEval(Callback):
                 found += 1
                 for percent in efs.keys():
                     # If i is still part of the fraction count the number of founds up
-                    if i < math.floor(len(indices)*(percent*0.01)):
+                    if i < int(math.floor(len(indices)*(percent*0.01))):
                         efs[percent] += 1
             curve_sum += found
         # AUC = sum of found positives for every x / (positives * (number of samples + 1))

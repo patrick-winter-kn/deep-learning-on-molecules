@@ -1,15 +1,15 @@
+import re
+import h5py
 import argparse
 from util import preprocess, partition_ref, oversample_ref, shuffle
-import h5py
-import re
 
 
 def get_arguments():
-    parser = argparse.ArgumentParser(description='Prepares the data set for training')
-    parser.add_argument('data', type=str, help='The data set containing the SMILES, class probability and partitioning')
+    parser = argparse.ArgumentParser(description='Prepares the given data set for training')
+    parser.add_argument('data', type=str, help='The data set containing the SMILES, classes and partitions')
     parser.add_argument('--oversample', action='store_true',
-                        help='Oversample underrepresented classes in the training dataset')
-    parser.add_argument('--shuffle', action='store_true', help='Shuffle the data sets')
+                        help='Oversample underrepresented classes in the training dataset (default: False)')
+    parser.add_argument('--shuffle', action='store_true', help='Shuffle the data sets (default: False)')
     return parser.parse_args()
 
 

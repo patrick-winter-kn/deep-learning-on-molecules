@@ -1,16 +1,16 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import gc
+import os
 import argparse
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from util import generate_features
 
 
 def get_arguments():
-    parser = argparse.ArgumentParser(description='Generate features')
-    parser.add_argument('data', type=str, help='The smiles matrices file')
-    parser.add_argument('model', type=str, help='The features model')
-    parser.add_argument('features', type=str, help='File containing the features')
-    parser.add_argument('--batch_size', type=int, default=100, help='Size of the batches')
+    parser = argparse.ArgumentParser(description='Generate features using a previously trained model')
+    parser.add_argument('data', type=str, help='File containing the input smiles matrices')
+    parser.add_argument('model', type=str, help='The model file')
+    parser.add_argument('features', type=str, help='Output file that will contain the generated features')
+    parser.add_argument('--batch_size', type=int, default=100, help='Size of the batches (default: 100)')
     return parser.parse_args()
 
 

@@ -1,5 +1,5 @@
-from h5py._hl import dataset
 import numpy
+from h5py._hl import dataset
 
 
 class ReferenceDataSet(dataset.Dataset):
