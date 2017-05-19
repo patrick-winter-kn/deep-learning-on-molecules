@@ -1,5 +1,5 @@
 import argparse
-from util import preprocess, partition, oversample
+from util import preprocess, partition, oversample, shuffle
 
 
 def get_arguments():
@@ -7,6 +7,7 @@ def get_arguments():
     parser.add_argument('data', type=str, help='The data set containing the SMILES, classes and partitions')
     parser.add_argument('--oversample', action='store_true',
                         help='Oversample underrepresented classes in the training dataset (default: False)')
+    parser.add_argument('--shuffle', action='store_true', help='Shuffle the training data set (default: False)')
     return parser.parse_args()
 
 
@@ -16,3 +17,5 @@ preprocess.preprocess(args.data, prefix + '-indices.h5', prefix + '-smiles_matri
 partition.write_partitions(args.data, prefix + '-smiles_matrices.h5', {1: 'train', 2: 'test', 3: 'validate'})
 if args.oversample:
     oversample.oversample(prefix + '-train.h5')
+if args.shuffle:
+    shuffle.shuffle(prefix + '-train.h5')

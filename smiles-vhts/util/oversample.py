@@ -26,12 +26,12 @@ def oversample(data_file):
                                                                              smiles_matrix.shape[1],
                                                                              smiles_matrix.shape[2]))
     left_difference = difference
+    if class_zero_count < class_one_count:
+        copies_per_instance = int(math.ceil(class_one_count / class_zero_count))
+    else:
+        copies_per_instance = int(math.ceil(class_zero_count / class_one_count))
+    target_i = 0
     with ProgressBar(max_value=oversampled_classes.shape[0]) as progress:
-        if class_zero_count < class_one_count:
-            copies_per_instance = int(math.ceil(class_one_count / class_zero_count))
-        else:
-            copies_per_instance = int(math.ceil(class_zero_count / class_one_count))
-        target_i = 0
         for i in range(len(classes)):
             minority = (class_zero_count < class_one_count and classes[i][0] >= classes[i][1]) or \
                        (class_one_count < class_zero_count and classes[i][1] > classes[i][0])

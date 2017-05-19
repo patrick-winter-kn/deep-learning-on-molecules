@@ -28,12 +28,12 @@ def oversample(refs_file, data_file, identifier=None):
     difference = abs(class_zero_count - class_one_count)
     oversampled_ref = target_hdf5.create_dataset('ref', (ref.shape[0] + difference,), dtype='I')
     left_difference = difference
+    if class_zero_count < class_one_count:
+        copies_per_instance = int(math.ceil(class_one_count / class_zero_count))
+    else:
+        copies_per_instance = int(math.ceil(class_zero_count / class_one_count))
+    target_i = 0
     with ProgressBar(max_value=oversampled_ref.shape[0]) as progress:
-        if class_zero_count < class_one_count:
-            copies_per_instance = int(math.ceil(class_one_count / class_zero_count))
-        else:
-            copies_per_instance = int(math.ceil(class_zero_count / class_one_count))
-        target_i = 0
         for i in range(len(ref)):
             value = classes[ref[i]]
             minority = (class_zero_count < class_one_count and value[0] >= value[1]) or \

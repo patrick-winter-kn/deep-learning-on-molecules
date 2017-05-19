@@ -9,7 +9,7 @@ def get_arguments():
     parser.add_argument('data', type=str, help='The data set containing the SMILES, classes and partitions')
     parser.add_argument('--oversample', action='store_true',
                         help='Oversample underrepresented classes in the training dataset (default: False)')
-    parser.add_argument('--shuffle', action='store_true', help='Shuffle the data sets (default: False)')
+    parser.add_argument('--shuffle', action='store_true', help='Shuffle the training data sets (default: False)')
     return parser.parse_args()
 
 
@@ -31,5 +31,4 @@ if args.oversample:
         oversample_ref.oversample(prefix + '-' + ident + '-train.h5', args.data, ident)
 if args.shuffle:
     for ident in ids:
-        for suffix in {'train', 'test', 'validate'}:
-            shuffle.shuffle(prefix + '-' + ident + '-' + suffix + '.h5')
+        shuffle.shuffle(prefix + '-' + ident + '-train.h5')

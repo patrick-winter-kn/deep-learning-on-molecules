@@ -32,9 +32,12 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
                               write_images=False, embeddings_freq=1)
     model_history = ModelHistory(model_file[:-3] + '-history.csv', monitor_metric)
     print('Training model for ' + str(epochs) + ' epochs')
-    type(classes).argmax = argmax
-    class_weights = calculate_class_weights(classes)
-    model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size, class_weight=class_weights,
+    # type(classes).argmax = argmax
+    # class_weights = calculate_class_weights(classes)
+    # model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size, class_weight=class_weights,
+    #           callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
+    #           validation_data=val_data)
+    model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
               callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
               validation_data=val_data)
     train_hdf5.close()
@@ -88,7 +91,10 @@ class ModelHistory(Callback):
         for key in self.log_keys:
             line += str(logs[key]) + ','
         self._buffer_ += line[:-1] + '\n'
-        if self._compare_(logs[self._monitor_], self._best_):
+        if not self._monitor:
+            self._file_.write(self._buffer_)
+            self._buffer_ = ''
+        elif self._compare_(logs[self._monitor_], self._best_):
             self._best_ = logs[self._monitor_]
             self._file_.write(self._buffer_)
             self._buffer_ = ''
