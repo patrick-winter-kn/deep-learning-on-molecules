@@ -77,14 +77,14 @@ class DrugDiscoveryEval(Callback):
         super().__init__()
         self.ef_percent = ef_percent
         self.positives = None
-        self.batch_size
+        self.batch_size = batch_size
 
     def on_epoch_end(self, epoch, logs=None):
         if self.validation_data:
             # Start with a new line, don't print right of the progressbar
             print()
             print('Predicting with intermediate model...')
-            predictions = []
+            predictions = numpy.zeros(self.validation_data[1].shape, self.validation_data[1].dtype)
             with ProgressBar(max_value=len(self.validation_data[0])) as progress:
                 for i in range(math.ceil(self.validation_data[0].shape[0] / self.batch_size)):
                     start = i * self.batch_size
