@@ -84,12 +84,12 @@ class DrugDiscoveryEval(Callback):
         if self.val_data:
             # Start with a new line, don't print right of the progressbar
             print()
-            print('Predicting with intermediate model...')
+            print('Predicting with intermediate model')
             predictions = numpy.zeros(self.val_data[1].shape, self.val_data[1].dtype)
             with ProgressBar(max_value=len(self.val_data[0])) as progress:
                 for i in range(math.ceil(self.val_data[0].shape[0] / self.batch_size)):
                     start = i * self.batch_size
-                    end = min(self.val_data[0].shape[0], (i + 1) * self.batch_size - 1)
+                    end = min(self.val_data[0].shape[0], (i + 1) * self.batch_size)
                     results = self.model.predict(self.val_data[0][start:end])
                     predictions[start:end] = results[:]
                     progress.update(end)
@@ -120,17 +120,20 @@ class DrugDiscoveryEval(Callback):
             efs[percent] = 0
         found = 0
         curve_sum = 0
-        for i in range(len(indices)):
-            row = self.val_data[1][indices[i]]
-            # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
-            # This means the active value is higher than the inactive value
-            if numpy.where(row == max(row))[0] == 0:
-                found += 1
-                for percent in efs.keys():
-                    # If i is still part of the fraction count the number of founds up
-                    if i < int(math.floor(len(indices)*(percent*0.01))):
-                        efs[percent] += 1
-            curve_sum += found
+        print('Calculating enrichment stats')
+        with ProgressBar(max_value=len(indices)) as progress:
+            for i in range(len(indices)):
+                row = self.val_data[1][indices[i]]
+                # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
+                # This means the active value is higher than the inactive value
+                if numpy.where(row == max(row))[0] == 0:
+                    found += 1
+                    for percent in efs.keys():
+                        # If i is still part of the fraction count the number of founds up
+                        if i < int(math.floor(len(indices)*(percent*0.01))):
+                            efs[percent] += 1
+                curve_sum += found
+                progress.update(i+1)
         # AUC = sum of found positives for every x / (positives * (number of samples + 1))
         # + 1 is added to the number of samples for the start with 0 samples selected
         auc = curve_sum / (self.positives_count() * (len(self.val_data[1]) + 1))
