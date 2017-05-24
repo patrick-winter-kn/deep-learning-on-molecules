@@ -4,7 +4,7 @@ from progressbar import ProgressBar
 import numpy
 import random
 from rdkit import Chem
-from tsp_solver.greedy import  solve_tsp
+#from tsp_solver.greedy import  solve_tsp
 from sklearn.manifold import MDS
 
 
@@ -57,10 +57,15 @@ def write_index_positions(neighborhoods_file, index_file, random_order):
     neighborhoods_hdf5 = h5py.File(neighborhoods_file, 'r')
     index_hdf5 = h5py.File(index_file, 'w')
     neighborhoods_set = set()
-    for neighborhoods_string in neighborhoods_hdf5['neighborhoods']:
-        neighborhoods = neighborhoods_from_string(neighborhoods_string.decode('utf-8'))
-        for n in neighborhoods:
-            neighborhoods_set.add(n)
+    print('Creating set of neighborhoods')
+    i = 0
+    with ProgressBar(max_value=len(neighborhoods_hdf5['neighborhoods'])) as progress:
+        for neighborhoods_string in neighborhoods_hdf5['neighborhoods']:
+            neighborhoods = neighborhoods_from_string(neighborhoods_string.decode('utf-8'))
+            for n in neighborhoods:
+                neighborhoods_set.add(n)
+            i += 1
+            progress.update(i)
     index_out = index_hdf5.create_dataset('index', (len(neighborhoods_set),), 'S2000')
     i = 0
     if random_order:
@@ -163,7 +168,7 @@ def mds_sorted_neighborhoods(neighborhoods_set):
     matrix = numpy.zeros(shape=(len(neighborhoods), len(neighborhoods)))
     print('Calculating distance matrix')
     counter = 0
-    with ProgressBar(max_value=(len(neighborhoods)*len(neighborhoods)-len(neighborhoods))/2) as progress:
+    with ProgressBar(max_value=int(len(neighborhoods)*len(neighborhoods)-len(neighborhoods))/2) as progress:
         for i in range(len(neighborhoods)):
             for j in range(i+1, len(neighborhoods)):
                 matrix[i][j] = neighborhoods[i].distance(neighborhoods[j])
@@ -179,23 +184,23 @@ def mds_sorted_neighborhoods(neighborhoods_set):
     return sorted
 
 
-def tsp_sorted_neighborhoods(neighborhoods_set):
-    neighborhoods = list(neighborhoods_set)
-    matrix = numpy.zeros(shape=(len(neighborhoods), len(neighborhoods)))
-    print('Calculating distance matrix')
-    counter = 0
-    with ProgressBar(max_value=(len(neighborhoods)*len(neighborhoods)-len(neighborhoods))/2) as progress:
-        for i in range(len(neighborhoods)):
-            for j in range(i+1, len(neighborhoods)):
-                matrix[i][j] = neighborhoods[i].distance(neighborhoods[j])
-                counter += 1
-                progress.update(counter)
-    print('Sorting based on distances')
-    path = solve_tsp(matrix)
-    sorted = []
-    for i in path:
-        sorted.append(neighborhoods[i])
-    return sorted
+# def tsp_sorted_neighborhoods(neighborhoods_set):
+#     neighborhoods = list(neighborhoods_set)
+#     matrix = numpy.zeros(shape=(len(neighborhoods), len(neighborhoods)))
+#     print('Calculating distance matrix')
+#     counter = 0
+#     with ProgressBar(max_value=(len(neighborhoods)*len(neighborhoods)-len(neighborhoods))/2) as progress:
+#         for i in range(len(neighborhoods)):
+#             for j in range(i+1, len(neighborhoods)):
+#                 matrix[i][j] = neighborhoods[i].distance(neighborhoods[j])
+#                 counter += 1
+#                 progress.update(counter)
+#     print('Sorting based on distances')
+#     path = solve_tsp(matrix)
+#     sorted = []
+#     for i in path:
+#         sorted.append(neighborhoods[i])
+#     return sorted
 
 
 def greedy_sorted_neighborhoods(neighborhoods_set):

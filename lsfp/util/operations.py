@@ -24,9 +24,9 @@ def prepare_data(directory, name, radius, random):
     create_neighborhoods(directory, name, radius)
     create_indices(directory, name, random)
     create_fingerprints(directory, name)
-    create_train(directory, name)
-    create_test(directory, name)
-    oversample(directory, name)
+    # create_train(directory, name)
+    # create_test(directory, name)
+    # oversample(directory, name)
 
 
 def train_model(directory, name, id, epochs, batch_size):
