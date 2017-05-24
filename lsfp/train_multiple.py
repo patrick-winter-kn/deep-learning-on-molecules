@@ -28,6 +28,7 @@ for data_set in source_hdf5.keys():
     if regex.match(data_set):
         ids.append(data_set[:-8])
 with ProgressBar(max_value=len(ids)) as progress:
+    progress.update(0)
     i = 0
     for ident in ids:
         print('========== ' + ident + ' ==========')
