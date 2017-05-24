@@ -35,8 +35,8 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id):
     tensor_board = TensorBoard(log_dir=model_path[:-3] + '-tensorboard', histogram_freq=1, write_graph=True,
                               write_images=False, embeddings_freq=1)
     checkpointer = ModelCheckpoint(filepath=model_path, verbose=0)
-    model.fit(fingerprints, classes, epochs=epochs, shuffle='batch', batch_size=batch_size, validation_data=val_data,
-              callbacks=[DrugDiscoveryEval([5, 10], batch_size), model_history, tensor_board, checkpointer])
+    model.fit(fingerprints, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
+              callbacks=[DrugDiscoveryEval(val_data, [5, 10], batch_size), model_history, tensor_board, checkpointer])
     classes_hdf5.close()
     fingerprints_hdf5.close()
     train_hdf5.close()
@@ -73,23 +73,24 @@ class ModelHistory(Callback):
 
 class DrugDiscoveryEval(Callback):
 
-    def __init__(self, ef_percent, batch_size):
+    def __init__(self, validation_data, ef_percent, batch_size):
         super().__init__()
         self.ef_percent = ef_percent
         self.positives = None
         self.batch_size = batch_size
+        self.val_data = validation_data
 
     def on_epoch_end(self, epoch, logs=None):
-        if self.validation_data:
+        if self.val_data:
             # Start with a new line, don't print right of the progressbar
             print()
             print('Predicting with intermediate model...')
-            predictions = numpy.zeros(self.validation_data[1].shape, self.validation_data[1].dtype)
-            with ProgressBar(max_value=len(self.validation_data[0])) as progress:
-                for i in range(math.ceil(self.validation_data[0].shape[0] / self.batch_size)):
+            predictions = numpy.zeros(self.val_data[1].shape, self.val_data[1].dtype)
+            with ProgressBar(max_value=len(self.val_data[0])) as progress:
+                for i in range(math.ceil(self.val_data[0].shape[0] / self.batch_size)):
                     start = i * self.batch_size
-                    end = min(self.validation_data[0].shape[0], (i + 1) * self.batch_size - 1)
-                    results = self.model.predict(self.validation_data[0][start:end])
+                    end = min(self.val_data[0].shape[0], (i + 1) * self.batch_size - 1)
+                    results = self.model.predict(self.val_data[0][start:end])
                     predictions[start:end] = results[:]
                     progress.update(end)
             # Get first column ([:,0], sort it (.argsort()) and reverse the order ([::-1]))
@@ -107,7 +108,7 @@ class DrugDiscoveryEval(Callback):
     def positives_count(self):
         if self.positives is None:
             self.positives = 0
-            for row in self.validation_data[1]:
+            for row in self.val_data[1]:
                 if numpy.where(row == max(row))[0] == 0:
                     self.positives += 1
         return self.positives
@@ -120,7 +121,7 @@ class DrugDiscoveryEval(Callback):
         found = 0
         curve_sum = 0
         for i in range(len(indices)):
-            row = self.validation_data[1][indices[i]]
+            row = self.val_data[1][indices[i]]
             # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
             # This means the active value is higher than the inactive value
             if numpy.where(row == max(row))[0] == 0:
@@ -132,7 +133,7 @@ class DrugDiscoveryEval(Callback):
             curve_sum += found
         # AUC = sum of found positives for every x / (positives * (number of samples + 1))
         # + 1 is added to the number of samples for the start with 0 samples selected
-        auc = curve_sum / (self.positives_count() * (len(self.validation_data[1]) + 1))
+        auc = curve_sum / (self.positives_count() * (len(self.val_data[1]) + 1))
         # Turn number of found positives into enrichment factor by dividing the number of positives found at random
         for percent in efs.keys():
             efs[percent] /= (self.positives_count() * (percent * 0.01))
