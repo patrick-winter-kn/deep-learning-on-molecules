@@ -6,6 +6,7 @@ import argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from util import learn_multitarget
 from keras import backend
+from progressbar import ProgressBar
 
 
 def get_arguments():
@@ -26,10 +27,15 @@ for data_set in source_hdf5.keys():
     data_set = str(data_set)
     if regex.match(data_set):
         ids.append(data_set[:-8])
-for ident in ids:
-    learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.epochs, 'sorted')
-    backend.clear_session()
-    learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.epochs, 'random')
-    backend.clear_session()
+with ProgressBar(max_value=len(ids)) as progress:
+    i = 0
+    for ident in ids:
+        print('========== ' + ident + ' ==========')
+        learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.epochs, 'sorted')
+        backend.clear_session()
+        learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.epochs, 'random')
+        backend.clear_session()
+        i += 1
+        progress.update(i)
 source_hdf5.close()
 gc.collect()
