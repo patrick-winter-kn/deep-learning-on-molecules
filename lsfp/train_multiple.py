@@ -5,6 +5,7 @@ import h5py
 import argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from util import learn_multitarget
+from keras import backend
 
 
 def get_arguments():
@@ -27,6 +28,8 @@ for data_set in source_hdf5.keys():
         ids.append(data_set[:-8])
 for ident in ids:
     learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.epochs, 'sorted')
+    backend.clear_session()
     learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.epochs, 'random')
+    backend.clear_session()
 source_hdf5.close()
 gc.collect()
