@@ -4,29 +4,43 @@ from progressbar import ProgressBar
 from matplotlib import pyplot
 
 
-def plot(predictions, classes, enrichment_factors, enrichment_plot_file, show):
-    indices = predictions[:, 0].argsort()[::-1]
-    actives, efs, auc = enrichment_stats(indices, enrichment_factors, classes)
+def plot(predictions_list, prediction_names, classes, enrichment_factors, enrichment_plot_file, show):
+    positives = positives_count(classes)
+    actives_list = []
+    efs_list = []
+    auc_list = []
+    for i in range(len(predictions_list)):
+        print('Calculating stats for ' + prediction_names[i])
+        predictions = predictions_list[i]
+        actives, efs, auc = enrichment_stats(predictions[:, 0].argsort()[::-1], enrichment_factors, classes, positives)
+        actives_list.append(actives)
+        efs_list.append(efs)
+        auc_list.append(auc)
     axis = pyplot.subplots()[1]
     axis.grid(True, linestyle='--')
     # Plot random line
     pyplot.plot((0,len(actives)), (0,actives[-1]), ls='-', c='0.75', label='Random')
     # Plot actives
-    pyplot.plot(actives, label='Predicted (AUC: ' + str(round(auc, 2)) + ')')
+    for i in range(len(predictions_list)):
+        pyplot.plot(actives_list[i], label=prediction_names[i]+' (AUC: ' + str(round(auc_list[i], 2)) + ')')
     # Add enrichment factors
-    for percent in sorted(efs):
+    for percent in sorted(enrichment_factors):
         x_start_end = int(math.ceil(percent * 0.01 * len(classes)))
-        y_end = actives[x_start_end]
-        pyplot.plot((x_start_end, x_start_end), (0, y_end), ls='--',
-                    label='Enrichment factor ' + str(percent) + '%: ' + str(round(efs[percent], 2)))
+        y_end = 0
+        for actives in actives_list:
+            y_end = max(y_end, actives[x_start_end])
+        ef_label = 'Enrichment factor ' + str(percent) + '%'
+        for i in range(len(efs_list)):
+            ef_label += '\n' + prediction_names[i] + ': ' + str(round(efs_list[i][percent], 2))
+        pyplot.plot((x_start_end, x_start_end), (0, y_end), ls='--', label=ef_label)
     pyplot.ylabel('Active Compounds')
     pyplot.xlabel('Compounds')
-    pyplot.legend(loc='lower right')
+    pyplot.legend(loc='lower right', fancybox=True)
     pyplot.tight_layout()
-    if show:
-        pyplot.show()
-    else:
+    if enrichment_plot_file:
         pyplot.savefig(enrichment_plot_file, format='svg', transparent=True)
+    else:
+        pyplot.show()
 
 
 def positives_count(classes):
@@ -43,16 +57,14 @@ def positives_count(classes):
     return positives
 
 
-def enrichment_stats(indices, ef_percent, classes):
+def enrichment_stats(indices, ef_percent, classes, positives):
     actives = [0]
-    positives = positives_count(classes)
     # efs maps the percent to the number of found positives
     efs = {}
     for percent in ef_percent:
         efs[percent] = 0
     found = 0
     curve_sum = 0
-    print('Calculating enrichment stats')
     with ProgressBar(max_value=len(indices)) as progress:
         for i in range(len(indices)):
             row = classes[indices[i]]
