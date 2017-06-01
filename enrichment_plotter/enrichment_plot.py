@@ -30,7 +30,7 @@ if args.show:
     args.enrichment_plot_file = None
 else:
     if not args.enrichment_plot_file:
-        args.enrichment_plot_file = args.predictions_files[0][:args.predictions_files[0].rfind('/')]\
+        args.enrichment_plot_file = args.predictions_files[0][:args.predictions_files[0].rfind('/') + 1]\
                                     + 'enrichmentplot.svg'
 for i in range(len(args.predictions_names), len(args.predictions_files)):
     args.predictions_names.append('Prediction ' + str(i))
