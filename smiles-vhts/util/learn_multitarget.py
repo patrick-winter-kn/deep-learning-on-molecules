@@ -32,7 +32,7 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
         model.load_features_model(feature_model_path)
     model_history = ModelHistory(model_path[:-3] + '-history.csv')
     model.predictions_model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-                                callbacks=[DrugDiscoveryEval([5, 10]), model_history], validation_data=val_data)
+                                callbacks=[DrugDiscoveryEval([5, 10], val_data), model_history])
     model.save_predictions_model(model_path)
     model.save_features_model(feature_model_path)
     classes_hdf5.close()
@@ -71,17 +71,18 @@ class ModelHistory(Callback):
 
 class DrugDiscoveryEval(Callback):
 
-    def __init__(self, ef_percent):
+    def __init__(self, ef_percent, validation_data):
         super().__init__()
         self.ef_percent = ef_percent
         self.positives = None
+        self.val_data = validation_data
 
     def on_epoch_end(self, epoch, logs=None):
-        if self.validation_data:
+        if self.val_data:
             # Start with a new line, don't print right of the progressbar
             print()
             print('Predicting with intermediate model...')
-            predictions = self.model.predict(self.validation_data[0])
+            predictions = self.model.predict(self.val_data[0])
             # Get first column ([:,0], sort it (.argsort()) and reverse the order ([::-1]))
             indices = predictions[:, 0].argsort()[::-1]
             efs, eauc = self.enrichment_stats(indices)
@@ -97,7 +98,7 @@ class DrugDiscoveryEval(Callback):
     def positives_count(self):
         if self.positives is None:
             self.positives = 0
-            for row in self.validation_data[1]:
+            for row in self.val_data[1]:
                 if numpy.where(row == max(row))[0] == 0:
                     self.positives += 1
         return self.positives
@@ -110,7 +111,7 @@ class DrugDiscoveryEval(Callback):
         found = 0
         curve_sum = 0
         for i in range(len(indices)):
-            row = self.validation_data[1][indices[i]]
+            row = self.val_data[1][indices[i]]
             # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
             # This means the active value is higher than the inactive value
             if numpy.where(row == max(row))[0] == 0:
@@ -122,7 +123,7 @@ class DrugDiscoveryEval(Callback):
             curve_sum += found
         # AUC = sum of found positives for every x / (positives * (number of samples + 1))
         # + 1 is added to the number of samples for the start with 0 samples selected
-        auc = curve_sum / (self.positives_count() * (len(self.validation_data[1]) + 1))
+        auc = curve_sum / (self.positives_count() * (len(self.val_data[1]) + 1))
         # Turn number of found positives into enrichment factor by dividing the number of positives found at random
         for percent in efs.keys():
             efs[percent] /= (self.positives_count() * (percent * 0.01))

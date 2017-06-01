@@ -5,6 +5,7 @@ import h5py
 import argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from util import learn_multitarget
+from keras import backend
 
 
 def get_arguments():
@@ -15,7 +16,7 @@ def get_arguments():
     parser.add_argument('--repeats', type=int, default=1, help='Number of repeated trainings over the different '
                                                                'targets (default: 1)')
     parser.add_argument('--epochs', type=int, default=1, help='Number of epochs (default: 1)')
-    parser.add_argument('--batch_size', type=int, default=100, help='Size of a batch (default: 100)')
+    parser.add_argument('--batch_size', type=int, default=50, help='Size of a batch (default: 100)')
     parser.add_argument('--validation', action='store_true', help='Use validation data set (default: False)')
     parser.add_argument('--freeze_features', action='store_true', help='Freeze the weights of the shared features '
                                                                        'model (default: False)')
@@ -34,5 +35,6 @@ for i in range(args.repeats):
     for ident in ids:
         learn_multitarget.train(args.data, ident, args.validation, args.batch_size, args.epochs, args.model_id,
                                 args.freeze_features)
+        backend.clear_session()
 source_hdf5.close()
 gc.collect()
