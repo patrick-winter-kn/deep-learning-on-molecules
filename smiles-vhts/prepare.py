@@ -14,7 +14,7 @@ def get_arguments():
 args = get_arguments()
 prefix = args.data[:args.data.rfind('.')]
 preprocess.preprocess(args.data, prefix + '-indices.h5', prefix + '-smiles_matrices.h5')
-partition.write_partitions(args.data, prefix + '-smiles_matrices.h5', {1: 'train', 2: 'test', 3: 'validate'})
+partition.write_partitions(args.data, prefix + '-smiles_matrices.h5', {1: 'train', 2: 'validate'})
 if args.oversample:
     oversample.oversample(prefix + '-train.h5')
 if args.shuffle:
