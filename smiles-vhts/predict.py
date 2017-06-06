@@ -10,7 +10,7 @@ def get_arguments():
     parser.add_argument('data', type=str, help='Input data file containing the smiles matrices')
     parser.add_argument('model', type=str, help='The model file')
     parser.add_argument('predictions', type=str, help='Output file that will contain the predictions')
-    parser.add_argument('--batch_size', type=int, default=100, help='Size of the batches (default: 100)')
+    parser.add_argument('--batch_size', type=int, default=50, help='Size of the batches (default: 50)')
     return parser.parse_args()
 
 
