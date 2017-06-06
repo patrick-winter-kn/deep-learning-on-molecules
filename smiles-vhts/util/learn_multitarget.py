@@ -33,7 +33,7 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
         model.load_features_model(feature_model_path)
     model_history = ModelHistory(model_path[:-3] + '-history.csv')
     model.predictions_model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-                                callbacks=[DrugDiscoveryEval([5, 10], val_data), model_history])
+                                callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size), model_history])
     model.save_predictions_model(model_path)
     model.save_features_model(feature_model_path)
     classes_hdf5.close()

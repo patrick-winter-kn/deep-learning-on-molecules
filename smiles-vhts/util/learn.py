@@ -29,6 +29,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     else:
         print('Creating new model')
         model = cnn.create_model(smiles_matrix.shape[1:], classes.shape[1])
+        cnn.print_model(model)
         epoch = 0
     checkpointer = ModelCheckpoint(filepath=model_file)
     #reduce_learning_rate = ReduceLROnPlateau(monitor=monitor_metric, factor=0.2, patience=2, min_lr=0.001)
@@ -42,7 +43,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     #           callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
     #           validation_data=val_data)
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size, initial_epoch=epoch,
-              callbacks=[DrugDiscoveryEval([5, 10], val_data), checkpointer, tensorboard, model_history])
+              callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size), checkpointer, tensorboard, model_history])
     train_hdf5.close()
 
 
@@ -132,22 +133,30 @@ class ModelHistory(Callback):
 
 class DrugDiscoveryEval(Callback):
 
-    def __init__(self, ef_percent, validation_data):
+    def __init__(self, ef_percent, validation_data, batch_size):
         super().__init__()
         self.ef_percent = ef_percent
-        self.positives = self.positives_count()
         self.val_data = validation_data
+        self.batch_size = batch_size
+        self.positives = self.positives_count()
 
     def on_epoch_end(self, epoch, logs=None):
         if self.val_data:
             # Start with a new line, don't print right of the progressbar
             print()
-            print('Predicting with intermediate model...')
-            predictions = self.model.predict(self.val_data[0])
+            print('Predicting with intermediate model')
+            predictions = numpy.zeros((self.val_data[0].shape[0], 2))
+            with ProgressBar(max_value=len(self.val_data[0])) as progress:
+                for i in range(int(math.ceil(self.val_data[0].shape[0]/self.batch_size))):
+                    start = i * self.batch_size
+                    end = min(self.val_data[0].shape[0], (i + 1) * self.batch_size)
+                    results = self.model.predict(self.val_data[0][start:end])
+                    predictions[start:end] = results[:]
+                    progress.update(end)
             # Get first column ([:,0], sort it (.argsort()) and reverse the order ([::-1]))
             indices = predictions[:, 0].argsort()[::-1]
             efs, eauc = self.enrichment_stats(indices)
-            for percent in efs.keys():
+            for percent in sorted(efs.keys()):
                 print('Enrichment Factor ' + str(percent) + '%: ' + str(efs[percent]))
                 logs['enrichment_factor_' + str(percent)] = numpy.float64(efs[percent])
             print('Enrichment AUC: ' + str(eauc))
@@ -176,23 +185,26 @@ class DrugDiscoveryEval(Callback):
             efs[percent] = 0
         found = 0
         curve_sum = 0
-        for i in range(len(indices)):
-            row = self.val_data[1][indices[i]]
-            # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
-            # This means the active value is higher than the inactive value
-            if numpy.where(row == max(row))[0] == 0:
-                found += 1
-                for percent in efs.keys():
-                    # If i is still part of the fraction count the number of founds up
-                    if i < int(math.floor(len(indices)*(percent*0.01))):
-                        efs[percent] += 1
-            curve_sum += found
+        print('Calculating enrichment stats')
+        with ProgressBar(max_value=len(indices)) as progress:
+            for i in range(len(indices)):
+                row = self.val_data[1][indices[i]]
+                # Check if index (numpy.where) of maximum value (max(row)) in row is 0 (==0)
+                # This means the active value is higher than the inactive value
+                if numpy.where(row == max(row))[0] == 0:
+                    found += 1
+                    for percent in efs.keys():
+                        # If i is still part of the fraction count the number of founds up
+                        if i < int(math.floor(len(indices)*(percent*0.01))):
+                            efs[percent] += 1
+                curve_sum += found
+                progress.update(i + 1)
         # AUC = sum of found positives for every x / (positives * (number of samples + 1))
         # + 1 is added to the number of samples for the start with 0 samples selected
-        auc = curve_sum / (self.positives_count() * (len(self.val_data[1]) + 1))
+        auc = curve_sum / (self.positives * (len(self.val_data[1]) + 1))
         # Turn number of found positives into enrichment factor by dividing the number of positives found at random
         for percent in efs.keys():
-            efs[percent] /= (self.positives_count() * (percent * 0.01))
+            efs[percent] /= (self.positives * (percent * 0.01))
         return efs, auc
 
     @staticmethod
