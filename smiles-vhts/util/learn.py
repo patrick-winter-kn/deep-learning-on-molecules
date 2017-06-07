@@ -24,8 +24,8 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
         val_classes = val_hdf5['classes']
         #monitor_metric = 'enrichment_auc'
         val_data = (val_smiles_matrix, val_classes)
-        if 'actives' in val_classes.attrs:
-            actives = val_classes.attrs['actives']
+        if 'actives' in val_hdf5.attrs:
+            actives = val_hdf5.attrs['actives']
     if path.isfile(model_file):
         print('Loading existing model ' + model_file)
         model = models.load_model(model_file)

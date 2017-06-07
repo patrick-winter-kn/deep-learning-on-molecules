@@ -38,6 +38,6 @@ for ident in ids:
     val_h5 = h5py.File(prefix + '-' + ident + '-validate.h5', 'a')
     val_classes = reference_data_set.ReferenceDataSet(val_h5['ref'], classes_h5[ident + '-classes'])
     print(ident)
-    val_h5.attrs['actives'] = actives_counter.count()
+    val_h5.attrs['actives'] = actives_counter.count(val_classes)
     val_h5.close()
 classes_h5.close()

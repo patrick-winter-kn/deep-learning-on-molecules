@@ -27,8 +27,8 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
         val_smiles_matrix = reference_data_set.ReferenceDataSet(validation_hdf5['ref'], smiles_hdf5['smiles_matrix'])
         val_classes = reference_data_set.ReferenceDataSet(validation_hdf5['ref'], classes_hdf5[identifier + '-classes'])
         val_data = (val_smiles_matrix, val_classes)
-        if 'actives' in val_classes.attrs:
-            actives = val_classes.attrs['actives']
+        if 'actives' in validation_hdf5.attrs:
+            actives = validation_hdf5.attrs['actives']
     model = cnn_shared.SharedFeaturesModel(smiles_matrix.shape[1:], classes.shape[1], not freeze_features)
     if path.isfile(model_path):
         model.load_predictions_model(model_path)
