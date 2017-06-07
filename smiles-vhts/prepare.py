@@ -1,5 +1,6 @@
 import argparse
-from util import preprocess, partition, oversample, shuffle
+from util import preprocess, partition, oversample, shuffle, actives_counter
+import h5py
 
 
 def get_arguments():
@@ -19,3 +20,6 @@ if args.oversample:
     oversample.oversample(prefix + '-train.h5')
 if args.shuffle:
     shuffle.shuffle(prefix + '-train.h5')
+val_h5 = h5py.File(prefix + '-validate.h5', 'a')
+val_h5.attrs['actives'] = actives_counter.count(val_h5['classes'])
+val_h5.close()

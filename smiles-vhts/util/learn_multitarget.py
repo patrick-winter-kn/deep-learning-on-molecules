@@ -20,12 +20,15 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
     smiles_matrix = reference_data_set.ReferenceDataSet(train_hdf5['ref'], smiles_hdf5['smiles_matrix'])
     classes = reference_data_set.ReferenceDataSet(train_hdf5['ref'], classes_hdf5[identifier + '-classes'])
     val_data = None
+    actives = None
     if use_validation:
         validation_path = prefix + '-' + identifier + '-validate.h5'
         validation_hdf5 = h5py.File(validation_path, 'r')
         val_smiles_matrix = reference_data_set.ReferenceDataSet(validation_hdf5['ref'], smiles_hdf5['smiles_matrix'])
         val_classes = reference_data_set.ReferenceDataSet(validation_hdf5['ref'], classes_hdf5[identifier + '-classes'])
         val_data = (val_smiles_matrix, val_classes)
+        if 'actives' in val_classes.attrs:
+            actives = val_classes.attrs['actives']
     model = cnn_shared.SharedFeaturesModel(smiles_matrix.shape[1:], classes.shape[1], not freeze_features)
     if path.isfile(model_path):
         model.load_predictions_model(model_path)
@@ -33,7 +36,7 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
         model.load_features_model(feature_model_path)
     model_history = ModelHistory(model_path[:-3] + '-history.csv')
     model.predictions_model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-                                callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size), model_history])
+                                callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size, actives), model_history])
     model.save_predictions_model(model_path)
     model.save_features_model(feature_model_path)
     classes_hdf5.close()

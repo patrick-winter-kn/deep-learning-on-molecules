@@ -1,7 +1,8 @@
 import re
 import h5py
 import argparse
-from util import preprocess, partition_ref, oversample_ref, shuffle
+from util import preprocess, partition_ref, oversample_ref, shuffle, actives_counter
+from data_structures import reference_data_set
 
 
 def get_arguments():
@@ -32,3 +33,11 @@ if args.oversample:
 if args.shuffle:
     for ident in ids:
         shuffle.shuffle(prefix + '-' + ident + '-train.h5')
+classes_h5 = h5py.File(args.data)
+for ident in ids:
+    val_h5 = h5py.File(prefix + '-' + ident + '-validate.h5', 'a')
+    val_classes = reference_data_set.ReferenceDataSet(val_h5['ref'], classes_h5[ident + '-classes'])
+    print(ident)
+    val_h5.attrs['actives'] = actives_counter.count()
+    val_h5.close()
+classes_h5.close()

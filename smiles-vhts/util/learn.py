@@ -6,6 +6,7 @@ from keras import models
 from keras.callbacks import Callback, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 from models import cnn
 from progressbar import ProgressBar
+from util import actives_counter
 
 
 def train(train_file, validation_file, model_file, epochs, batch_size):
@@ -15,6 +16,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     classes = train_hdf5['classes']
     #monitor_metric = 'acc'
     val_data = None
+    actives = None
     history_file = model_file[:-3] + '-history.csv'
     if val:
         val_hdf5 = h5py.File(validation_file, 'r')
@@ -22,6 +24,8 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
         val_classes = val_hdf5['classes']
         #monitor_metric = 'enrichment_auc'
         val_data = (val_smiles_matrix, val_classes)
+        if 'actives' in val_classes.attrs:
+            actives = val_classes.attrs['actives']
     if path.isfile(model_file):
         print('Loading existing model ' + model_file)
         model = models.load_model(model_file)
@@ -43,7 +47,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     #           callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
     #           validation_data=val_data)
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size, initial_epoch=epoch,
-              callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size), checkpointer, tensorboard, model_history])
+              callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size, actives), checkpointer, tensorboard, model_history])
     train_hdf5.close()
 
 
@@ -133,12 +137,15 @@ class ModelHistory(Callback):
 
 class DrugDiscoveryEval(Callback):
 
-    def __init__(self, ef_percent, validation_data, batch_size):
+    def __init__(self, ef_percent, validation_data, batch_size, actives=None):
         super().__init__()
         self.ef_percent = ef_percent
         self.val_data = validation_data
         self.batch_size = batch_size
-        self.positives = self.positives_count()
+        if actives:
+            self.positives = actives
+        else:
+            self.positives = actives_counter.count(self.val_data[1])
 
     def on_epoch_end(self, epoch, logs=None):
         if self.val_data:
@@ -164,19 +171,6 @@ class DrugDiscoveryEval(Callback):
             dr = self.diversity_ratio(predictions)
             print('Diversity Ratio: ' + str(dr))
             logs['diversity_ratio'] = numpy.float64(dr)
-
-    def positives_count(self):
-        print('Counting active compounds')
-        positives = 0
-        with ProgressBar(max_value=len(self.val_data[1])) as progress:
-            i = 0
-            for row in self.val_data[1]:
-                if numpy.where(row == max(row))[0] == 0:
-                    positives += 1
-                i += 1
-                progress.update(i)
-        print('Found ' + str(positives) + ' active compounds')
-        return positives
 
     def enrichment_stats(self, indices):
         # efs maps the percent to the number of found positives
