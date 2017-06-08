@@ -26,7 +26,7 @@ for data_set in source_hdf5.keys():
         ids.append(data_set[:-8])
 source_hdf5.close()
 for ident in ids:
-    partition_ref.write_partitions(args.data, {1: 'train', 2: 'test', 3: 'validate'}, ident)
+    partition_ref.write_partitions(args.data, {1: 'train', 2: 'validate'}, ident)
 if args.oversample:
     for ident in ids:
         oversample_ref.oversample(prefix + '-' + ident + '-train.h5', args.data, ident)
