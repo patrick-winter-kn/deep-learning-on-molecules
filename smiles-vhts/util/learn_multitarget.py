@@ -2,7 +2,7 @@ from os import path
 import math
 import numpy
 import h5py
-from keras.callbacks import Callback
+from keras.callbacks import Callback, TensorBoard
 from data_structures import reference_data_set
 from models import cnn_shared
 from util.learn import DrugDiscoveryEval
@@ -34,9 +34,17 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
         model.load_predictions_model(model_path)
     if path.isfile(feature_model_path):
         model.load_features_model(feature_model_path)
-    model_history = ModelHistory(model_path[:-3] + '-history.csv')
+    history_file = model_path[:-3] + '-history.csv'
+    epoch = 0;
+    if path.isfile(history_file):
+        epoch = sum(1 for line in open(history_file)) - 1
+    model_history = ModelHistory(history_file)
+    tensorboard = TensorBoard(log_dir=model_path[:-3] + '-tensorboard', histogram_freq=1, write_graph=True,
+                              write_images=False, embeddings_freq=1)
     model.predictions_model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
-                                callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size, actives), model_history])
+                                initial_epoch=epoch,
+                                callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size, actives), model_history,
+                                           tensorboard])
     model.save_predictions_model(model_path)
     model.save_features_model(feature_model_path)
     classes_hdf5.close()
