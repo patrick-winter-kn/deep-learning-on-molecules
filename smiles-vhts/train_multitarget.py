@@ -31,16 +31,14 @@ for data_set in source_hdf5.keys():
     if regex.match(data_set):
         ids.append(data_set[:-8])
 source_hdf5.close()
-with ProgressBar(max_value=args.epochs) as progress:
-    for i in range(args.epochs):
-        with ProgressBar(max_value=len(ids)) as inner_progress:
-            j = 0
-            for ident in ids:
-                print('========== ' + ident + ' ==========')
-                learn_multitarget.train(args.data, ident, args.validation, args.batch_size, i+1, args.model_id,
-                                        args.freeze_features)
-                backend.clear_session()
-                j += 1
-                inner_progress.update(j)
-        progress.update(i + 1)
+for i in range(args.epochs):
+    with ProgressBar(max_value=len(ids)) as progress:
+        j = 0
+        for ident in ids:
+            print('========== ' + ident + ' (epoch ' + str(i+1) + ') ==========')
+            learn_multitarget.train(args.data, ident, args.validation, args.batch_size, i+1, args.model_id,
+                                    args.freeze_features)
+            backend.clear_session()
+            j += 1
+            progress.update(j)
 gc.collect()
