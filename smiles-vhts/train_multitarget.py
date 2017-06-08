@@ -3,6 +3,7 @@ import os
 import re
 import h5py
 import argparse
+import shutil
 from progressbar import ProgressBar
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from util import learn_multitarget
@@ -31,14 +32,16 @@ for data_set in source_hdf5.keys():
     if regex.match(data_set):
         ids.append(data_set[:-8])
 source_hdf5.close()
-for i in range(args.epochs):
+feature_model_path = args.data[:args.data.rfind('.')] + '-model-' + args.model_id + '.h5'
+for epoch in range(1, args.epochs + 1):
     with ProgressBar(max_value=len(ids)) as progress:
         j = 0
         for ident in ids:
-            print('========== ' + ident + ' (epoch ' + str(i+1) + ') ==========')
-            learn_multitarget.train(args.data, ident, args.validation, args.batch_size, i+1, args.model_id,
+            print('========== ' + ident + ' (epoch ' + str(epoch) + ') ==========')
+            learn_multitarget.train(args.data, ident, args.validation, args.batch_size, epoch, args.model_id,
                                     args.freeze_features)
             backend.clear_session()
             j += 1
             progress.update(j)
+    shutil.copyfile(feature_model_path, feature_model_path[:-3] + '-epoch-' + str(epoch) + '.h5')
 gc.collect()
