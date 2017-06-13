@@ -15,11 +15,11 @@ def get_arguments():
 
 args = get_arguments()
 prefix = args.data[:args.data.rfind('.')]
-test_h5 = h5py.File(prefix + '-test.h5', 'r')
+test_h5 = h5py.File(prefix + '-validate.h5', 'r')
 features_h5 = h5py.File(args.features, 'r')
 features = reference_data_set.ReferenceDataSet(test_h5['ref'], features_h5['features'])
 predictions_h5 = h5py.File(args.out_data, 'w')
-predictions = random_forest.train(features, args.model)
+predictions = random_forest.predict(features, args.model)
 predictions_h5.create_dataset('predictions', data=predictions)
 predictions_h5.close()
 test_h5.close()
