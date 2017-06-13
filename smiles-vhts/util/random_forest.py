@@ -3,8 +3,8 @@ from sklearn.externals import joblib
 import numpy
 
 
-def train(train_data_input, train_data_output, model_path, nr_trees=10000):
-    random_forest = RandomForestClassifier(n_estimators=nr_trees, min_samples_leaf=10, class_weight="balanced", n_jobs=-1, verbose=1)
+def train(train_data_input, train_data_output, model_path, nr_trees=100):
+    random_forest = RandomForestClassifier(n_estimators=nr_trees, min_samples_leaf=10, n_jobs=-1, verbose=2)
     random_forest.fit(train_data_input, train_data_output)
     joblib.dump(random_forest, model_path)
 
