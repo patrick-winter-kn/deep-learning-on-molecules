@@ -40,6 +40,9 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     tensorboard = TensorBoard(log_dir=model_file[:-3] + '-tensorboard', histogram_freq=1, write_graph=True,
                               write_images=False, embeddings_freq=1)
     model_history = ModelHistory(history_file)
+    callbacks = [checkpointer, tensorboard, model_history]
+    if val_data:
+        callbacks = [DrugDiscoveryEval([5, 10], val_data, batch_size, actives)] + callbacks
     print('Training model for ' + str(epochs) + ' epochs')
     # type(classes).argmax = argmax
     # class_weights = calculate_class_weights(classes)
@@ -47,7 +50,7 @@ def train(train_file, validation_file, model_file, epochs, batch_size):
     #           callbacks=[DrugDiscoveryEval([5, 10]), checkpointer, reduce_learning_rate, tensorboard, model_history],
     #           validation_data=val_data)
     model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size, initial_epoch=epoch,
-              callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size, actives), checkpointer, tensorboard, model_history])
+              callbacks=callbacks)
     train_hdf5.close()
 
 
