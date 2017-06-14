@@ -15,8 +15,12 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
     smiles_hdf5 = h5py.File(smiles_path, 'r')
     train_path = prefix + '-' + identifier + '-train.h5'
     train_hdf5 = h5py.File(train_path, 'r')
-    model_path = prefix + '-' + identifier + '-model-' + model_id + '.h5'
-    feature_model_path = prefix + '-model-' + model_id + '.h5'
+    if model_id:
+        model_path = prefix + '-' + identifier + '-model-' + model_id + '.h5'
+        feature_model_path = prefix + '-model-' + model_id + '.h5'
+    else:
+        model_path = prefix + '-' + identifier + '-model.h5'
+        feature_model_path = prefix + '-model.h5'
     smiles_matrix = reference_data_set.ReferenceDataSet(train_hdf5['ref'], smiles_hdf5['smiles_matrix'])
     classes = reference_data_set.ReferenceDataSet(train_hdf5['ref'], classes_hdf5[identifier + '-classes'])
     val_data = None
@@ -41,10 +45,12 @@ def train(data_file, identifier, use_validation, batch_size, epochs, model_id, f
     model_history = ModelHistory(history_file)
     tensorboard = TensorBoard(log_dir=model_path[:-3] + '-tensorboard', histogram_freq=1, write_graph=True,
                               write_images=False, embeddings_freq=1)
+    callbacks = [model_history, tensorboard]
+    if use_validation:
+        callbacks = [DrugDiscoveryEval([5, 10], val_data, batch_size, actives)] + callbacks
     model.predictions_model.fit(smiles_matrix, classes, epochs=epochs, shuffle='batch', batch_size=batch_size,
                                 initial_epoch=epoch,
-                                callbacks=[DrugDiscoveryEval([5, 10], val_data, batch_size, actives), model_history,
-                                           tensorboard])
+                                callbacks=callbacks)
     model.save_predictions_model(model_path)
     model.save_features_model(feature_model_path)
     classes_hdf5.close()

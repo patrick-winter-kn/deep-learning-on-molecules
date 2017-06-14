@@ -5,7 +5,8 @@ import h5py
 import re
 from progressbar import ProgressBar
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from util import preprocess, fingerprints
+from util import preprocess, fingerprints, partition_ref, oversample_ref, shuffle, learn_cnn, generate_features
+from keras import backend
 
 
 def get_arguments():
@@ -36,13 +37,24 @@ if not os.path.isfile(fingerprints_file):
 with ProgressBar(max_value=len(ids)) as progress:
     i = 0
     for ident in ids:
-        # TODO preprocessing (for x)
-        # TODO CNN training
-        # TODO CNN feature generation
+        # preprocessing (for ident)
+        train_file = prefix + '-' + ident + '-train.h5'
+        validate_file = prefix + '-' + ident + '-validate.h5'
+        if not os.path.isfile(train_file) or not os.path.isfile(validate_file):
+            partition_ref.write_partitions(args.data, {1: 'train', 2: 'validate'}, ident)
+            oversample_ref.oversample(train_file, args.data, ident)
+            shuffle.shuffle(train_file)
+        # CNN training
+        learn_cnn.train(args.data, ident, 50, 1)
+        # CNN feature generation
+        cnn_features_file = prefix + '-' + ident + '-cnn_features.h5'
+        cnn_model_file = prefix + '-' + ident + '-cnn.h5'
+        generate_features.generate_features(matrices_file, cnn_model_file, cnn_features_file, 50)
         # TODO RF training (CNN)
         # TODO RF training (fingerprints)
         # TODO prediction (CNN)
         # TODO prediction (fingerprints)
+        backend.clear_session()
         i += 1
         progress.update(i)
 # TODO evaluation
