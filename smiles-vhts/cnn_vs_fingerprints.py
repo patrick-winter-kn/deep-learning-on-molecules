@@ -69,7 +69,7 @@ with ProgressBar(max_value=len(ids)) as progress:
         random_forest.train(cnn_train_input, train_output, rf_cnn_file)
         # RF training (fingerprints)
         fingerprints_h5 = h5py.File(fingerprints_file, 'r')
-        fp_train_input = reference_data_set.ReferenceDataSet(train_h5['ref'], fingerprints_h5['features'])
+        fp_train_input = reference_data_set.ReferenceDataSet(train_h5['ref'], fingerprints_h5['fingerprint'])
         rf_fp_file = prefix + '-' + ident + '-rf_fp.h5'
         random_forest.train(fp_train_input, train_output, rf_fp_file)
         # prediction (CNN)
@@ -80,7 +80,7 @@ with ProgressBar(max_value=len(ids)) as progress:
         predictions = random_forest.predict(cnn_test_input, rf_cnn_file)
         cnn_predictions_h5.create_dataset('predictions', data=predictions)
         # prediction (fingerprints)
-        fp_test_input = reference_data_set.ReferenceDataSet(test_h5['ref'], fingerprints_h5['features'])
+        fp_test_input = reference_data_set.ReferenceDataSet(test_h5['ref'], fingerprints_h5['fingerprint'])
         fp_predictions_file = prefix + '-' + ident + '-predictions_fp.h5'
         fp_predictions_h5 = h5py.File(fp_predictions_file, 'w')
         predictions = random_forest.predict(fp_test_input, rf_fp_file)
