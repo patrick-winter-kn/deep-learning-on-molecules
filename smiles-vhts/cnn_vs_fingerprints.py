@@ -31,7 +31,7 @@ for data_set in source_h5.keys():
 indices_file = prefix + '-indices.h5'
 matrices_file = prefix + '-smiles_matrices.h5'
 fingerprints_file = prefix + '-fingerprints.h5'
-results_file = prefix + '-results.h5'
+results_file = prefix + '-results.csv'
 results = open(results_file, 'w')
 results.write(',auc-fp')
 for enrichment_factor in enrichment_factors:
