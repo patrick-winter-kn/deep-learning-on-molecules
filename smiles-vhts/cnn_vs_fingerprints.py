@@ -33,10 +33,10 @@ matrices_file = prefix + '-smiles_matrices.h5'
 fingerprints_file = prefix + '-fingerprints.h5'
 results_file = prefix + '-results.h5'
 results = open(results_file, 'w')
-results.write('auc-fp')
+results.write(',auc-fp')
 for enrichment_factor in enrichment_factors:
     results.write(',ef' + str(enrichment_factor) + '-fp')
-results.write('auc-cnn')
+results.write(',auc-cnn')
 for enrichment_factor in enrichment_factors:
     results.write(',ef' + str(enrichment_factor) + '-cnn')
 results.write('\n')
@@ -88,10 +88,11 @@ with ProgressBar(max_value=len(ids)) as progress:
         # evaluation
         test_output = reference_data_set.ReferenceDataSet(test_h5['ref'], source_h5[ident + '-classes'])
         efs, aucs = enrichment_stats.calculate_stats([fp_predictions_h5['predictions'], cnn_predictions_h5['predictions']], test_output, enrichment_factors)
-        results.write(str(aucs[0]))
+        results.write(str(ident))
+        results.write(',' + str(aucs[0]))
         for ef in efs[0]:
             results.write(',' + str(ef))
-        results.write(str(aucs[1]))
+        results.write(',' + str(aucs[1]))
         for ef in efs[1]:
             results.write(',' + str(ef))
         results.write('\n')
