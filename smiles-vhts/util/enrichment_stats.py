@@ -1,7 +1,6 @@
 import numpy
 import math
 from progressbar import ProgressBar
-from matplotlib import pyplot
 
 
 def calculate_stats(predictions_list, classes, enrichment_factors):
