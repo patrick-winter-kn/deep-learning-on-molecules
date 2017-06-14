@@ -5,7 +5,7 @@ import h5py
 import re
 from progressbar import ProgressBar
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from util import preprocess, fingerprints, partition_ref, oversample_ref, shuffle, learn_cnn, generate_features, random_forest
+from util import preprocess, fingerprints, partition_ref, oversample_ref, shuffle, learn_cnn, generate_features, random_forest, enrichment_stats
 from keras import backend
 from data_structures import reference_data_set
 
@@ -17,6 +17,7 @@ def get_arguments():
 
 
 args = get_arguments()
+enrichment_factors = [5, 10]
 prefix = args.data[:args.data.rfind('.')]
 # get IDs
 ids = []
@@ -30,6 +31,15 @@ for data_set in source_h5.keys():
 indices_file = prefix + '-indices.h5'
 matrices_file = prefix + '-smiles_matrices.h5'
 fingerprints_file = prefix + '-fingerprints.h5'
+results_file = prefix + '-results.h5'
+results = open(results_file, 'w')
+results.write('auc-fp')
+for enrichment_factor in enrichment_factors:
+    results.write(',ef' + str(enrichment_factor) + '-fp')
+results.write('auc-cnn')
+for enrichment_factor in enrichment_factors:
+    results.write(',ef' + str(enrichment_factor) + '-cnn')
+results.write('\n')
 if not os.path.isfile(indices_file) or not os.path.isfile(matrices_file):
     preprocess.preprocess(args.data, indices_file, matrices_file)
 if not os.path.isfile(fingerprints_file):
@@ -75,6 +85,15 @@ with ProgressBar(max_value=len(ids)) as progress:
         fp_predictions_h5 = h5py.File(fp_predictions_file, 'w')
         predictions = random_forest.predict(fp_test_input, rf_fp_file)
         fp_predictions_h5.create_dataset('predictions', data=predictions)
+        # evaluation
+        test_output = reference_data_set.ReferenceDataSet(test_h5['ref'], source_h5[ident + '-classes'])
+        efs, aucs = enrichment_stats.calculate_stats([fp_predictions_h5['predictions'], cnn_predictions_h5['predictions']], test_output, enrichment_factors)
+        results.write(str(aucs[0]))
+        for ef in efs[0]:
+            results.write(',' + str(ef))
+        results.write(str(aucs[1]))
+        for ef in efs[1]:
+            results.write(',' + str(ef))
         train_h5.close()
         test_h5.close()
         cnn_features_h5.close()
@@ -84,6 +103,6 @@ with ProgressBar(max_value=len(ids)) as progress:
         backend.clear_session()
         i += 1
         progress.update(i)
-# TODO evaluation
 source_h5.close()
+results.close()
 gc.collect()
