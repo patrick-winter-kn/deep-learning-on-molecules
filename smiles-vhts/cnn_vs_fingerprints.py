@@ -94,6 +94,7 @@ with ProgressBar(max_value=len(ids)) as progress:
         results.write(str(aucs[1]))
         for ef in efs[1]:
             results.write(',' + str(ef))
+        results.write('\n')
         train_h5.close()
         test_h5.close()
         cnn_features_h5.close()
