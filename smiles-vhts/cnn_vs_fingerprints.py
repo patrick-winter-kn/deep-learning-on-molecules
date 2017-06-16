@@ -65,13 +65,14 @@ with ProgressBar(max_value=len(ids)) as progress:
         cnn_features_h5 = h5py.File(cnn_features_file, 'r')
         cnn_train_input = reference_data_set.ReferenceDataSet(train_h5['ref'], cnn_features_h5['features'])
         train_output = reference_data_set.ReferenceDataSet(train_h5['ref'], source_h5[ident + '-classes'])
+        train_output_classes = random_forest.numerical_to_classes(train_output)
         rf_cnn_file = prefix + '-' + ident + '-rf_cnn.h5'
-        random_forest.train(cnn_train_input, train_output, rf_cnn_file)
+        random_forest.train(cnn_train_input, train_output_classes, rf_cnn_file)
         # RF training (fingerprints)
         fingerprints_h5 = h5py.File(fingerprints_file, 'r')
         fp_train_input = reference_data_set.ReferenceDataSet(train_h5['ref'], fingerprints_h5['fingerprint'])
         rf_fp_file = prefix + '-' + ident + '-rf_fp.h5'
-        random_forest.train(fp_train_input, train_output, rf_fp_file)
+        random_forest.train(fp_train_input, train_output_classes, rf_fp_file)
         # prediction (CNN)
         test_h5 = h5py.File(validate_file, 'r')
         cnn_test_input = reference_data_set.ReferenceDataSet(test_h5['ref'], cnn_features_h5['features'])
