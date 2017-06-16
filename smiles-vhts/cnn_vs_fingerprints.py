@@ -96,6 +96,7 @@ with ProgressBar(max_value=len(ids)) as progress:
         for ef in efs[1]:
             results.write(',' + str(ef))
         results.write('\n')
+        # cleanup
         train_h5.close()
         test_h5.close()
         cnn_features_h5.close()
@@ -103,6 +104,11 @@ with ProgressBar(max_value=len(ids)) as progress:
         cnn_predictions_h5.close()
         fp_predictions_h5.close()
         backend.clear_session()
+        # delete intermediate files to free space
+        os.remove(cnn_features_file)
+        os.remove(cnn_predictions_file)
+        os.remove(fp_predictions_file)
+        # update progress
         i += 1
         progress.update(i)
 source_h5.close()
