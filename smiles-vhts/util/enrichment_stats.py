@@ -15,7 +15,19 @@ def calculate_stats(predictions_list, classes, enrichment_factors):
         actives_list.append(actives)
         efs_list.append(efs)
         auc_list.append(auc)
+        # diversity = diversity_ratio(predictions)
+        # print('Diversity ratio: ' + str(diversity))
     return efs_list, auc_list
+
+
+def diversity_ratio(predictions):
+    print('Calculating diversity')
+    results = set()
+    with ProgressBar(max_value=len(predictions)) as progress:
+        for i in range(len(predictions)):
+            results.add(predictions[i][0])
+            progress.update(i+1)
+    return len(results)/len(predictions)
 
 
 def positives_count(classes):

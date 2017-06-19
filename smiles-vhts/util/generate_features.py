@@ -14,7 +14,7 @@ def generate_features(smiles_file, model_file, features_file, batch_size):
     with ProgressBar(max_value=len(smiles_matrix)) as progress:
         for i in range(int(math.ceil(smiles_matrix.shape[0]/batch_size))):
             start = i * batch_size
-            end = min(smiles_matrix.shape[0], (i + 1) * batch_size - 1)
+            end = min(smiles_matrix.shape[0], (i + 1) * batch_size)
             results = model.predict(smiles_matrix[start:end])
             features[start:end] = results[:]
             progress.update(end)
