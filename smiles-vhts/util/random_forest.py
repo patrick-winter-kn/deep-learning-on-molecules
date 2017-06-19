@@ -4,7 +4,7 @@ import numpy
 from progressbar import ProgressBar
 
 
-def train(train_data_input, train_data_output, model_path, nr_trees=100):
+def train(train_data_input, train_data_output, model_path, nr_trees=1000):
     random_forest = RandomForestClassifier(n_estimators=nr_trees, min_samples_leaf=10, n_jobs=-1,
                                            class_weight="balanced", verbose=2)
     random_forest.fit(train_data_input, train_data_output)
@@ -14,7 +14,7 @@ def train(train_data_input, train_data_output, model_path, nr_trees=100):
 def predict(test_data_input, model_path):
     random_forest = joblib.load(model_path)
     probabilities = random_forest.predict_proba(test_data_input)
-    probabilities = numpy.array(probabilities).transpose()
+    probabilities = numpy.array(probabilities)
     return probabilities
 
 

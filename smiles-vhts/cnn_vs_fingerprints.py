@@ -92,10 +92,10 @@ with ProgressBar(max_value=len(ids)) as progress:
         results.write(str(ident))
         results.write(',' + str(aucs[0]))
         for ef in efs[0]:
-            results.write(',' + str(ef))
+            results.write(',' + str(efs[0][ef]))
         results.write(',' + str(aucs[1]))
         for ef in efs[1]:
-            results.write(',' + str(ef))
+            results.write(',' + str(efs[1][ef]))
         results.write('\n')
         # cleanup
         train_h5.close()
