@@ -55,7 +55,7 @@ with ProgressBar(max_value=len(ids)) as progress:
             oversample_ref.oversample(train_file, args.data, ident)
             shuffle.shuffle(train_file)
         # CNN training
-        learn_cnn.train(args.data, ident, 50, 1)
+        learn_cnn.train(args.data, ident, 50, 2)
         # CNN feature generation
         cnn_features_file = prefix + '-' + ident + '-cnn_features.h5'
         cnn_model_file = prefix + '-' + ident + '-cnn.h5'

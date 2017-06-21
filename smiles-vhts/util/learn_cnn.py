@@ -19,3 +19,4 @@ def train(data_file, identifier, batch_size, epochs):
     classes_hdf5.close()
     smiles_hdf5.close()
     train_hdf5.close()
+
