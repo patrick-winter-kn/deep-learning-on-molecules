@@ -17,7 +17,7 @@ def calculate_stats(predictions_list, classes, enrichment_factors):
         auc_list.append(auc)
         # diversity = diversity_ratio(predictions)
         # print('Diversity ratio: ' + str(diversity))
-    return efs_list, auc_list
+    return auc_list, efs_list
 
 
 def diversity_ratio(predictions):

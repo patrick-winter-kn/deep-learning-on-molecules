@@ -100,7 +100,7 @@ with ProgressBar(max_value=len(ids)) as progress:
         # evaluation
         test_output = reference_data_set.ReferenceDataSet(test_h5['ref'], source_h5[ident + '-classes'])
         enrichment_plot_file = prefix + '-' + ident + '-plot.svg'
-        efs, aucs = enrichment_plotter.plot(
+        aucs, efs = enrichment_plotter.plot(
             [nn_predictions_h5['predictions'], cnn_predictions_h5['predictions'], fp_predictions_h5['predictions']],
             ['Neural Network', 'Random Forest (CNN)', 'Random Forest (Fingerprints)'], test_output, enrichment_factors,
             enrichment_plot_file)
