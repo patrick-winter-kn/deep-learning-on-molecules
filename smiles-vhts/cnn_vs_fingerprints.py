@@ -5,7 +5,7 @@ import h5py
 import re
 from progressbar import ProgressBar
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from util import preprocess, fingerprints, partition_ref, oversample_ref, shuffle, learn_cnn, generate_features, random_forest, enrichment_stats
+from util import preprocess, fingerprints, partition_ref, oversample_ref, shuffle, learn_cnn, generate_features, random_forest, enrichment_plotter
 from keras import backend
 from data_structures import reference_data_set
 
@@ -99,7 +99,11 @@ with ProgressBar(max_value=len(ids)) as progress:
         fp_predictions_h5.create_dataset('predictions', data=predictions)
         # evaluation
         test_output = reference_data_set.ReferenceDataSet(test_h5['ref'], source_h5[ident + '-classes'])
-        efs, aucs = enrichment_stats.calculate_stats([nn_predictions_h5['predictions'], cnn_predictions_h5['predictions'], fp_predictions_h5['predictions']], test_output, enrichment_factors)
+        enrichment_plot_file = prefix + '-' + ident + '-plot.svg'
+        efs, aucs = enrichment_plotter.plot(
+            [nn_predictions_h5['predictions'], cnn_predictions_h5['predictions'], fp_predictions_h5['predictions']],
+            ['Neural Network', 'Random Forest (CNN)', 'Random Forest (Fingerprints)'], test_output, enrichment_factors,
+            enrichment_plot_file)
         results.write(str(ident))
         results.write(',' + str(aucs[0]))
         for ef in enrichment_factors:
