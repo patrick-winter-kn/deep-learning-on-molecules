@@ -12,7 +12,7 @@ import os
 def encoder(path, max_length, charset_length, latent_rep_size):
     inputs = Input(shape=(max_length, charset_length), name='input_3')
     outputs, loss_function = add_encoder_layers(inputs, max_length, latent_rep_size)
-    model = Model(input=inputs, output=outputs)
+    model = Model(inputs=inputs, outputs=outputs)
     if os.path.isfile(path):
         model.load_weights(path, by_name=True)
     model.compile(optimizer='Adam', loss=loss_function, metrics=['accuracy'])
@@ -34,7 +34,7 @@ def autoencoder(path, max_length, charset_length, latent_rep_size):
     inputs = Input(shape=(max_length, charset_length), name='input_3')
     latent_outputs, loss_function = add_encoder_layers(inputs, max_length, latent_rep_size)
     outputs = add_decoder_layers(latent_outputs, max_length, charset_length, latent_rep_size)
-    model = Model(input=inputs, output=outputs)
+    model = Model(inputs=inputs, outputs=outputs)
     path = os.path.expanduser(path)
     if os.path.isfile(path):
         model.load_weights(path, by_name=True)
@@ -89,5 +89,5 @@ class Sampler:
         epsilon_std = 0.01
         z_mean, z_log_var = arguments
         batch_size = backend.shape(z_mean)[0]
-        epsilon = backend.random_normal(shape=(batch_size, self.latent_rep_size), mean=0.0, std=epsilon_std)
+        epsilon = backend.random_normal(shape=(batch_size, self.latent_rep_size), mean=0.0, stddev=epsilon_std)
         return z_mean + backend.exp(z_log_var / 2) * epsilon
