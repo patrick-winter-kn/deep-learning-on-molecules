@@ -18,6 +18,7 @@ def get_arguments():
 
 args = get_arguments()
 enrichment_factors = [5, 10]
+enrichment_factors = sorted(enrichment_factors)
 prefix = args.data[:args.data.rfind('.')]
 # get IDs
 ids = []
@@ -101,13 +102,13 @@ with ProgressBar(max_value=len(ids)) as progress:
         efs, aucs = enrichment_stats.calculate_stats([nn_predictions_h5['predictions'], cnn_predictions_h5['predictions'], fp_predictions_h5['predictions']], test_output, enrichment_factors)
         results.write(str(ident))
         results.write(',' + str(aucs[0]))
-        for ef in efs[0]:
+        for ef in enrichment_factors:
             results.write(',' + str(efs[0][ef]))
         results.write(',' + str(aucs[1]))
-        for ef in efs[1]:
+        for ef in enrichment_factors:
             results.write(',' + str(efs[1][ef]))
         results.write(',' + str(aucs[2]))
-        for ef in efs[2]:
+        for ef in enrichment_factors:
             results.write(',' + str(efs[2][ef]))
         results.write('\n')
         # cleanup

@@ -71,7 +71,7 @@ def enrichment_stats(indices, ef_percent, classes, positives):
     auc = curve_sum / (positives * (len(classes) + 1))
     print('AUC: ' + str(auc))
     # Turn number of found positives into enrichment factor by dividing the number of positives found at random
-    for percent in efs.keys():
+    for percent in sorted(efs.keys()):
         efs[percent] /= (positives * (percent * 0.01))
         print('EF at ' + str(percent) + '%: ' + str(efs[percent]))
     return actives, efs, auc
