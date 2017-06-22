@@ -33,12 +33,15 @@ matrices_file = prefix + '-smiles_matrices.h5'
 fingerprints_file = prefix + '-fingerprints.h5'
 results_file = prefix + '-results.csv'
 results = open(results_file, 'w')
-results.write(',auc-fp')
+results.write(',auc-nn')
 for enrichment_factor in enrichment_factors:
-    results.write(',ef' + str(enrichment_factor) + '-fp')
+    results.write(',ef' + str(enrichment_factor) + '-nn')
 results.write(',auc-cnn')
 for enrichment_factor in enrichment_factors:
     results.write(',ef' + str(enrichment_factor) + '-cnn')
+results.write(',auc-fp')
+for enrichment_factor in enrichment_factors:
+    results.write(',ef' + str(enrichment_factor) + '-fp')
 results.write('\n')
 if not os.path.isfile(indices_file) or not os.path.isfile(matrices_file):
     preprocess.preprocess(args.data, indices_file, matrices_file)
@@ -73,6 +76,11 @@ with ProgressBar(max_value=len(ids)) as progress:
         fp_train_input = reference_data_set.ReferenceDataSet(train_h5['ref'], fingerprints_h5['fingerprint'])
         rf_fp_file = prefix + '-' + ident + '-rf_fp.h5'
         random_forest.train(fp_train_input, train_output_classes, rf_fp_file)
+        # prediction (NN)
+        nn_predictions_file = prefix + '-' + ident + '-nn_predictions.h5'
+        nn_model_file = prefix + '-' + ident + '-nn.h5'
+        learn_cnn.predict(matrices_file, nn_model_file, nn_predictions_file, 50)
+        nn_predictions_h5 = h5py.File(nn_predictions_file, 'r')
         # prediction (CNN)
         test_h5 = h5py.File(validate_file, 'r')
         cnn_test_input = reference_data_set.ReferenceDataSet(test_h5['ref'], cnn_features_h5['features'])
@@ -88,7 +96,7 @@ with ProgressBar(max_value=len(ids)) as progress:
         fp_predictions_h5.create_dataset('predictions', data=predictions)
         # evaluation
         test_output = reference_data_set.ReferenceDataSet(test_h5['ref'], source_h5[ident + '-classes'])
-        efs, aucs = enrichment_stats.calculate_stats([fp_predictions_h5['predictions'], cnn_predictions_h5['predictions']], test_output, enrichment_factors)
+        efs, aucs = enrichment_stats.calculate_stats([nn_predictions_h5['predictions'], cnn_predictions_h5['predictions'], fp_predictions_h5['predictions']], test_output, enrichment_factors)
         results.write(str(ident))
         results.write(',' + str(aucs[0]))
         for ef in efs[0]:
@@ -96,6 +104,9 @@ with ProgressBar(max_value=len(ids)) as progress:
         results.write(',' + str(aucs[1]))
         for ef in efs[1]:
             results.write(',' + str(efs[1][ef]))
+        results.write(',' + str(aucs[2]))
+        for ef in efs[2]:
+            results.write(',' + str(efs[2][ef]))
         results.write('\n')
         # cleanup
         train_h5.close()
@@ -104,8 +115,10 @@ with ProgressBar(max_value=len(ids)) as progress:
         fingerprints_h5.close()
         cnn_predictions_h5.close()
         fp_predictions_h5.close()
+        nn_predictions_h5.close()
         backend.clear_session()
         # delete intermediate files to free space
+        os.remove(nn_predictions_file)
         os.remove(cnn_features_file)
         os.remove(cnn_predictions_file)
         os.remove(fp_predictions_file)
