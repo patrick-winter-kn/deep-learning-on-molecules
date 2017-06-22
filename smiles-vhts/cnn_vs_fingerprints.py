@@ -47,6 +47,7 @@ if not os.path.isfile(indices_file) or not os.path.isfile(matrices_file):
     preprocess.preprocess(args.data, indices_file, matrices_file)
 if not os.path.isfile(fingerprints_file):
     fingerprints.write_fingerprints(args.data, 'smiles', fingerprints_file, 'fingerprint', 1024)
+matrices_h5 = h5py.File(matrices_file, 'r')
 with ProgressBar(max_value=len(ids)) as progress:
     i = 0
     for ident in ids:
@@ -77,12 +78,13 @@ with ProgressBar(max_value=len(ids)) as progress:
         rf_fp_file = prefix + '-' + ident + '-rf_fp.h5'
         random_forest.train(fp_train_input, train_output_classes, rf_fp_file)
         # prediction (NN)
+        test_h5 = h5py.File(validate_file, 'r')
         nn_predictions_file = prefix + '-' + ident + '-nn_predictions.h5'
         nn_model_file = prefix + '-' + ident + '-nn.h5'
-        learn_cnn.predict(matrices_file, nn_model_file, nn_predictions_file, 50)
+        nn_test_input = reference_data_set.ReferenceDataSet(test_h5['ref'], matrices_h5['smiles_matrix'])
+        learn_cnn.predict(nn_test_input, nn_model_file, nn_predictions_file, 50)
         nn_predictions_h5 = h5py.File(nn_predictions_file, 'r')
         # prediction (CNN)
-        test_h5 = h5py.File(validate_file, 'r')
         cnn_test_input = reference_data_set.ReferenceDataSet(test_h5['ref'], cnn_features_h5['features'])
         cnn_predictions_file = prefix + '-' + ident + '-predictions_cnn.h5'
         cnn_predictions_h5 = h5py.File(cnn_predictions_file, 'w')
@@ -126,5 +128,6 @@ with ProgressBar(max_value=len(ids)) as progress:
         i += 1
         progress.update(i)
 source_h5.close()
+matrices_h5.close()
 results.close()
 gc.collect()

@@ -26,11 +26,9 @@ def train(data_file, identifier, batch_size, epochs):
     train_hdf5.close()
 
 
-def predict(smiles_file, model_file, predictions_file, batch_size):
+def predict(smiles_matrix, model_file, predictions_file, batch_size):
     print('Predicting with NN')
-    smiles_hdf5 = h5py.File(smiles_file, 'r')
     predictions_hdf5 = h5py.File(predictions_file, 'w')
-    smiles_matrix = smiles_hdf5['smiles_matrix']
     model = models.load_model(model_file)
     features = predictions_hdf5.create_dataset('predictions', (smiles_matrix.shape[0], model.output_shape[1]))
     with ProgressBar(max_value=len(smiles_matrix)) as progress:
@@ -40,5 +38,4 @@ def predict(smiles_file, model_file, predictions_file, batch_size):
             results = model.predict(smiles_matrix[start:end])
             features[start:end] = results[:]
             progress.update(end)
-    smiles_hdf5.close()
     predictions_hdf5.close()
