@@ -3,6 +3,7 @@ import os
 import argparse
 import h5py
 import re
+import numpy
 from progressbar import ProgressBar
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from keras import backend
@@ -40,6 +41,8 @@ results.write('\n')
 if not os.path.isfile(indices_file) or not os.path.isfile(matrices_file):
     preprocess.preprocess(args.data, indices_file, matrices_file)
 matrices_h5 = h5py.File(matrices_file, 'r')
+matrices = numpy.array(matrices_h5['smiles_matrix'])
+matrices = matrices.reshape(matrices.shape[0], matrices.shape[1] * matrices.shape[2])
 with ProgressBar(max_value=len(ids)) as progress:
     i = 0
     for ident in ids:
@@ -50,23 +53,25 @@ with ProgressBar(max_value=len(ids)) as progress:
             partition_ref.write_partitions(args.data, {1: 'train', 2: 'validate'}, ident)
         # RF training
         train_h5 = h5py.File(train_file, 'r')
-        train_input = reference_data_set.ReferenceDataSet(train_h5['ref'], matrices_h5['smiles_matrix'])
         train_output = reference_data_set.ReferenceDataSet(train_h5['ref'], source_h5[ident + '-classes'])
         train_output_classes = random_forest.numerical_to_classes(train_output)
         rf_file = prefix + '-' + ident + '-rf.h5'
+        train_input = matrices.__getitem__(train_h5['ref'])
         random_forest.train(train_input, train_output_classes, rf_file)
+        train_input = None
         # prediction
         test_h5 = h5py.File(validate_file, 'r')
-        test_input = reference_data_set.ReferenceDataSet(test_h5['ref'], matrices_h5['smiles_matrix'])
         predictions_file = prefix + '-' + ident + '-predictions.h5'
         predictions_h5 = h5py.File(predictions_file, 'w')
+        test_input = matrices.__getitem__(test_h5['ref'])
         predictions = random_forest.predict(test_input, rf_file)
+        test_input = None
         predictions_h5.create_dataset('predictions', data=predictions)
         # evaluation
         test_output = reference_data_set.ReferenceDataSet(test_h5['ref'], source_h5[ident + '-classes'])
         enrichment_plot_file = prefix + '-' + ident + '-plot.svg'
         aucs, efs = enrichment_plotter.plot(
-            [predictions_h5['predictions']], ['Autoencoder'], test_output, enrichment_factors, enrichment_plot_file)
+            [predictions_h5['predictions']], ['SMILES Matrix'], test_output, enrichment_factors, enrichment_plot_file)
         results.write(str(ident))
         results.write(',' + str(aucs[0]))
         for ef in enrichment_factors:
