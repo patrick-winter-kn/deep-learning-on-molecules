@@ -43,7 +43,7 @@ if not os.path.isfile(indices_file) or not os.path.isfile(matrices_file):
 matrices_h5 = h5py.File(matrices_file, 'r')
 # train autoencoder
 model_file = prefix + '-autoencoder.h5'
-trainer.train(model_file, matrices_h5['smiles_matrix'], 50, 2, 292)
+trainer.train(model_file, matrices_h5['smiles_matrix'], 50, 30, 292)
 # generate features
 features_file = prefix + '-features.h5'
 features_h5 = h5py.File(features_file, 'w')

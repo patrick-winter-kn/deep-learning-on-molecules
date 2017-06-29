@@ -1,6 +1,8 @@
 import numpy
 import math
 from progressbar import ProgressBar
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot
 
 
@@ -41,6 +43,7 @@ def plot(predictions_list, prediction_names, classes, enrichment_factors, enrich
         pyplot.savefig(enrichment_plot_file, format='svg', transparent=True)
     else:
         pyplot.show()
+    pyplot.close('all')
 
 
 def positives_count(classes):
