@@ -21,4 +21,5 @@ def create_model(input_shape, output_size):
     l = Dropout(0.75, name='dropout_dense_5')(l)
     output_layer = Dense(output_size, activation='softmax', name='output', kernel_initializer=initializer)(l)
     model = Model(inputs=input_layer, outputs=output_layer)
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     return model

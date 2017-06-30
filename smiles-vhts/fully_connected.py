@@ -51,7 +51,7 @@ with ProgressBar(max_value=len(ids)) as progress:
             oversample_ref.oversample(train_file, args.data, ident)
             shuffle.shuffle(train_file)
         # NN training
-        learn_deep_mlp.train(args.data, ident, 50, 2)
+        learn_deep_mlp.train(args.data, ident, 50, 1)
         # prediction (NN)
         test_h5 = h5py.File(validate_file, 'r')
         nn_predictions_file = prefix + '-' + ident + '-nn_predictions.h5'
@@ -75,7 +75,6 @@ with ProgressBar(max_value=len(ids)) as progress:
         backend.clear_session()
         # delete intermediate files to free space
         os.remove(nn_predictions_file)
-        os.remove(cnn_features_file)
         # update progress
         i += 1
         progress.update(i)
