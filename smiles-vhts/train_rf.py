@@ -9,7 +9,7 @@ def get_arguments():
     parser.add_argument('data', type=str, help='The source data file')
     parser.add_argument('features', type=str, help='File containing the features data set')
     parser.add_argument('model', type=str, help='Model file')
-    parser.add_argument('--nr_trees', type=int, default=100, help='Number of trees (default: 100)')
+    parser.add_argument('--nr_trees', type=int, default=1000, help='Number of trees (default: 1000)')
     return parser.parse_args()
 
 
