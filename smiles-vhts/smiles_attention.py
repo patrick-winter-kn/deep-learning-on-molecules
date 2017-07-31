@@ -13,6 +13,7 @@ def get_arguments():
     parser = argparse.ArgumentParser(description='Generate attention map for SMILES based predictions')
     parser.add_argument('model', type=str, help='The model')
     parser.add_argument('data', type=str, help='The input data')
+    parser.add_argument('output', type=str, help='The output SVG')
     parser.add_argument('index', type=int, help='Index of the data point to visualize')
     return parser.parse_args()
 
@@ -32,7 +33,7 @@ heatmap = visualization.visualize_saliency(model, out_layer_index, filter_indice
 
 print('SMILES: ' + smiles)
 
-render_smiles.render(smiles, '/home/winter/smiles-test.svg', 5, heatmap)
+render_smiles.render(smiles, args.output, 5, heatmap)
 
 data_h5.close()
 smiles_matrices_h5.close()
