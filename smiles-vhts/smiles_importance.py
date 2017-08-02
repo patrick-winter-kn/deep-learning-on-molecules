@@ -44,11 +44,6 @@ if min(differences) != 0:
 else:
     negative_factor = 0
 
-print('Max: ' + str(max(differences)))
-print('Positive factor: ' + str(positive_factor))
-print('Min: ' + str(min(differences)))
-print('Negative factor: ' + str(negative_factor))
-
 heatmap = numpy.zeros((len(differences), 3), numpy.uint8)
 for i in range(len(differences)):
     difference = differences[i]
@@ -59,7 +54,6 @@ for i in range(len(differences)):
 
 print('SMILES: ' + smiles)
 print('p(active): ' + str(active))
-print('Max red: ' + str(heatmap.max()))
 
 render_smiles.render(smiles, args.output, 5, heatmap)
 
