@@ -32,7 +32,7 @@ train = train_h5['ref']
 classes = reference_data_set.ReferenceDataSet(train_h5['ref'], data_h5['classes'])
 # load one image to get dimensions
 width, height = image.load_img(image_dir + str(train[0]) + '.png').size
-img_array = numpy.zeros((len(train), width, height))
+img_array = numpy.zeros((len(train), width, height), dtype=numpy.uint8)
 with ProgressBar(max_value=len(train)) as progress:
     for i in range(len(train)):
         img = image.load_img(image_dir + str(train[i]) + '.png')
@@ -50,7 +50,7 @@ if args.validation:
     test = test_h5['ref']
     test_classes = reference_data_set.ReferenceDataSet(test_h5['ref'], data_h5['classes'])
     actives = actives_counter.count(test_classes)
-    test_img_array = numpy.zeros((len(test), width, height))
+    test_img_array = numpy.zeros((len(test), width, height), dtype=numpy.uint8)
     with ProgressBar(max_value=len(test)) as progress:
         for i in range(len(test)):
             img = image.load_img(image_dir + str(test[i]) + '.png')
