@@ -17,6 +17,7 @@ from keras import models
 def get_arguments():
     parser = argparse.ArgumentParser(description='Train model for images')
     parser.add_argument('data', type=str, help='The source data file')
+    parser.add_argument('model', type=str, help='The model file to be trained')
     parser.add_argument('--epochs', type=int, default=1, help='Number of epochs (default: 1)')
     parser.add_argument('--batch_size', type=int, default=50, help='Size of a batch (default: 50)')
     parser.add_argument('--validation', action='store_true', help='Use validation data set (default: False)')
