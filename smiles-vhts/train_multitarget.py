@@ -16,7 +16,7 @@ def get_arguments():
     parser.add_argument('data', type=str, help='The source data file')
     parser.add_argument('model_id', type=str, help='ID of the models')
     parser.add_argument('--epochs', type=int, default=1, help='Number of epochs (default: 1)')
-    parser.add_argument('--batch_size', type=int, default=50, help='Size of a batch (default: 100)')
+    parser.add_argument('--batch_size', type=int, default=50, help='Size of a batch (default: 50)')
     parser.add_argument('--validation', action='store_true', help='Use validation data set (default: False)')
     parser.add_argument('--freeze_features', action='store_true', help='Freeze the weights of the shared features '
                                                                        'model (default: False)')
