@@ -3,7 +3,7 @@ import os
 import h5py
 import argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from keras.applications.inception_v3 import InceptionV3
+from keras.applications.vgg19 import VGG19
 from keras.preprocessing import image
 import numpy
 from progressbar import ProgressBar
@@ -37,10 +37,12 @@ with ProgressBar(max_value=len(train)) as progress:
     for i in range(len(train)):
         img = image.load_img(image_dir + str(train[i]) + '.png')
         img_array[i] = image.img_to_array(img)
+        progress.update(i+1)
 if os.path.exists(args.model):
     model = models.load_model(args.model)
 else:
-    model = InceptionV3(weights=None, input_shape=(width, height), classes=2)
+    model = VGG19(include_top=True, weights=None, input_shape=(width, height, 3), classes=2)
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 checkpointer = ModelCheckpoint(filepath=args.model)
 tensorboard = TensorBoard(log_dir=args.data[:args.data.rfind('.')] + '-tensorboard', histogram_freq=1, write_graph=True,
                           write_images=False, embeddings_freq=1)

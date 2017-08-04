@@ -14,24 +14,25 @@ from rdkit.Chem.Draw.MolDrawing import DrawingOptions
 def get_arguments():
     parser = argparse.ArgumentParser(description='Preprocess data for image based learning')
     parser.add_argument('data', type=str, help='Input data file containing the smiles, the classes and the partitions')
-    parser.add_argument('--scale', type=float, default=1.0, help='Scale of the rendered images (default: 1.0)')
+    parser.add_argument('--size', type=int, default=224, help='Size in pixels for width and height (default: 224)')
     return parser.parse_args()
 
 
 class ImageRenderer(threading.Thread):
 
-    def __init__(self, smiles, offset, directory, progress, scale):
+    def __init__(self, smiles, offset, directory, progress, size):
         threading.Thread.__init__(self)
         self.smiles = smiles
         self.offset = offset
         self.directory = directory
         self.progress = progress
-        self.scale = scale
+        self.size = size
 
     def run(self):
-        drawingSize = (800 * self.scale, 800 * self.scale)
+        scale = self.size / 800
+        drawingSize = (self.size, self.size)
         options = DrawingOptions()
-        options.dotsPerAngstrom = 30 * self.scale
+        options.dotsPerAngstrom = 30 * scale
         for i in range(len(self.smiles)):
             image_path = self.directory + str(self.offset + i) + '.png'
             if not os.path.exists(image_path):
@@ -73,7 +74,7 @@ smiles_per_thread = math.ceil(len(smiles)/nr_threads)
 for i in range(nr_threads):
     start = i * smiles_per_thread
     end = (i + 1) * smiles_per_thread
-    thread = ImageRenderer(smiles[start:end], start, image_dir, progress, args.scale)
+    thread = ImageRenderer(smiles[start:end], start, image_dir, progress, args.size)
     thread.start()
     threads.append(thread)
 for i in range(len(threads)):
