@@ -12,6 +12,8 @@ from keras.callbacks import TensorBoard, ModelCheckpoint
 from util.learn import  DrugDiscoveryEval
 from util import actives_counter
 from keras import models
+from keras.layers import Dense, Flatten
+from keras.models import Model
 
 
 def get_arguments():
@@ -41,7 +43,14 @@ with ProgressBar(max_value=len(train)) as progress:
 if os.path.exists(args.model):
     model = models.load_model(args.model)
 else:
-    model = VGG19(include_top=True, weights=None, input_shape=(width, height, 3), classes=2)
+    model = VGG19(include_top=False, weights=None, input_shape=(width, height, 3))
+    input_layer = model.layers[0]
+    features_layer = model.layers[len(model.layers)-1]
+    x = Flatten(name='flatten')(features_layer)
+    x = Dense(4096, activation='relu', name='fc1')(x)
+    x = Dense(4096, activation='relu', name='fc2')(x)
+    output_layer = Dense(2, activation='softmax', name='predictions')(x)
+    model = Model(inputs=input_layer, outputs=output_layer)
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 checkpointer = ModelCheckpoint(filepath=args.model)
 tensorboard = TensorBoard(log_dir=args.data[:args.data.rfind('.')] + '-tensorboard', histogram_freq=1, write_graph=True,
