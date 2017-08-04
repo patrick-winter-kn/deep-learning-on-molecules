@@ -14,7 +14,7 @@ from rdkit.Chem.Draw.MolDrawing import DrawingOptions
 def get_arguments():
     parser = argparse.ArgumentParser(description='Preprocess data for image based learning')
     parser.add_argument('data', type=str, help='Input data file containing the smiles, the classes and the partitions')
-    parser.add_argument('--size', type=int, default=224, help='Size in pixels for width and height (default: 224)')
+    parser.add_argument('--size', type=int, default=800, help='Size in pixels for width and height (default: 800)')
     return parser.parse_args()
 
 
