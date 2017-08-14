@@ -39,7 +39,7 @@ with ProgressBar(max_value=len(test)) as progress:
         for j in range(end-start):
             img = image.load_img(image_dir + str(test[start+j]) + '.png')
             img_array[j] = image.img_to_array(img)
-        results = model.predict(test[start:end])
+        results = model.predict(img_array)
         predictions[start:end] = results[:]
         progress.update(end)
 predictions_h5.create_dataset('classes', data=classes)
