@@ -3,7 +3,6 @@ import os
 import h5py
 import argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from keras.applications.vgg19 import VGG19
 from keras.preprocessing import image
 import numpy
 from progressbar import ProgressBar
@@ -12,8 +11,7 @@ from keras.callbacks import TensorBoard, ModelCheckpoint
 from util.learn import  DrugDiscoveryEval
 from util import actives_counter
 from keras import models
-from keras.layers import Dense, Flatten
-from keras.models import Model
+from models import image_cnn
 
 
 def get_arguments():
@@ -21,7 +19,7 @@ def get_arguments():
     parser.add_argument('data', type=str, help='The source data file')
     parser.add_argument('model', type=str, help='The model file to be trained')
     parser.add_argument('--epochs', type=int, default=1, help='Number of epochs (default: 1)')
-    parser.add_argument('--batch_size', type=int, default=50, help='Size of a batch (default: 50)')
+    parser.add_argument('--batch_size', type=int, default=5, help='Size of a batch (default: 5)')
     parser.add_argument('--validation', action='store_true', help='Use validation data set (default: False)')
     return parser.parse_args()
 
@@ -31,27 +29,14 @@ image_dir = args.data[:args.data.rfind('/')] + '/images/'
 data_h5 = h5py.File(args.data, 'r')
 train_h5 = h5py.File(args.data[:args.data.rfind('.')] + '-train.h5', 'r')
 train = train_h5['ref']
-classes = reference_data_set.ReferenceDataSet(train_h5['ref'], data_h5['classes'])
+classes = reference_data_set.ReferenceDataSet(train, data_h5['classes'])
 # load one image to get dimensions
 width, height = image.load_img(image_dir + str(train[0]) + '.png').size
-img_array = numpy.zeros((len(train), width, height, 3), dtype=numpy.uint8)
-with ProgressBar(max_value=len(train)) as progress:
-    for i in range(len(train)):
-        img = image.load_img(image_dir + str(train[i]) + '.png')
-        img_array[i] = image.img_to_array(img)
-        progress.update(i+1)
 if os.path.exists(args.model):
     model = models.load_model(args.model)
 else:
-    model = VGG19(include_top=False, weights=None, input_shape=(width, height, 3))
-    input_layer = model.layers[0]
-    features_layer = model.layers[len(model.layers)-1]
-    x = Flatten(name='flatten')(features_layer)
-    x = Dense(4096, activation='relu', name='fc1')(x)
-    x = Dense(4096, activation='relu', name='fc2')(x)
-    output_layer = Dense(2, activation='softmax', name='predictions')(x)
-    model = Model(inputs=input_layer, outputs=output_layer)
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model = image_cnn.create_model((width, height, 3), 2)
+    model.summary()
 checkpointer = ModelCheckpoint(filepath=args.model)
 tensorboard = TensorBoard(log_dir=args.data[:args.data.rfind('.')] + '-tensorboard', histogram_freq=1, write_graph=True,
                           write_images=False, embeddings_freq=1)
@@ -67,6 +52,13 @@ if args.validation:
             img = image.load_img(image_dir + str(test[i]) + '.png')
             test_img_array[i] = image.img_to_array(img)
     callbacks = [DrugDiscoveryEval([5, 10], (test_img_array, test_classes), args.batch_size, actives)] + callbacks
+img_array = numpy.zeros((len(train), width, height, 3), dtype=numpy.uint8)
+print('Loading images')
+with ProgressBar(max_value=len(train)) as progress:
+    for i in range(len(train)):
+        img = image.load_img(image_dir + str(train[i]) + '.png')
+        img_array[i] = image.img_to_array(img)
+        progress.update(i+1)
 model.fit(img_array, classes, epochs=args.epochs, shuffle='batch', batch_size=args.batch_size, callbacks=callbacks)
 
 data_h5.close()
