@@ -44,7 +44,7 @@ with ProgressBar(max_value=len(test)) as progress:
         progress.update(end)
 predictions_h5.create_dataset('classes', data=classes)
 
-enrichment_plotter.plot([predictions], ['images'], classes, [5, 10], args.data[:args.data.rfind('.')] + '-validate-plot.h5')
+enrichment_plotter.plot([predictions], ['images'], classes, [5, 10], args.data[:args.data.rfind('.')] + '-validate-plot.svg')
 
 data_h5.close()
 test_h5.close()
