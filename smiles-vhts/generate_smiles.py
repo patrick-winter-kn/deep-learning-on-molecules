@@ -1,11 +1,14 @@
 import h5py
 import argparse
 import random
+import re
+from progressbar import ProgressBar
 
 
 atoms = {'o': 0.12, 's': 0.02, 'n': 0.11, 'f': 0.01, 'c': 0.72, 'l': 0.01, 'h': 0.01}
 branches = 0.19
 rings = 0.14
+atom_pattern = re.compile('[a-z]')
 
 
 ring_label = 1
@@ -25,7 +28,7 @@ def is_branch(action, current_length, target_length):
 
 
 def is_ring(action, current_length, target_length, label_size):
-    return action > branches and action <= rings + branches and current_length > 0 and current_length + label_size * 2 + 1 < target_length
+    return action > branches and action <= rings + branches and current_length > 0 and current_length + label_size * 2 + 2 < target_length
 
 
 def pick_atom():
@@ -36,18 +39,23 @@ def pick_atom():
             return atom
 
 
-def generate_smiles(max_length):
+def is_atom(char):
+    global atom_pattern
+    return atom_pattern.match(char)
+
+
+def generate_smiles(min_length, max_length, is_in_ring):
     global ring_label
-    length = random.randint(1,max_length)
+    length = random.randint(min_length,max_length)
     string = ''
     while len(string) < length:
         action = random.uniform(0.0, 1.0)
-        if is_branch(action, len(string), length):
-            string += '(' + generate_smiles(length - len(string) - 3) + ')'
-        elif is_ring(action, len(string), length, len(str(ring_label))):
+        if is_branch(action, len(string), length) and is_atom(string[-1]):
+            string += '(' + generate_smiles(1, length - len(string) - 2, False) + ')'
+        elif is_ring(action, len(string), length, len(str(ring_label))) and is_atom(string[-1]) and not is_in_ring:
             label = str(ring_label)
             ring_label += 1
-            string += label + generate_smiles(length - len(string) - (len(label) * 2 + 1)) + label
+            string += label + generate_smiles(2, length - len(string) - (len(label) * 2), True) + label
         else:
             string += pick_atom()
     return string
@@ -57,6 +65,9 @@ args = get_arguments()
 random.seed(args.seed)
 data_h5 = h5py.File(args.file, 'w')
 smiles_data = data_h5.create_dataset('smiles', (args.number,), 'S' + str(args.max_length))
-for i in range(args.number):
-    smiles_data[i] = generate_smiles(args.max_length).encode()
+with ProgressBar(max_value=args.number) as progress:
+    for i in range(args.number):
+        ring_label = 1
+        smiles_data[i] = generate_smiles(1, args.max_length, False).encode()
+        progress.update(i+1)
 data_h5.close()
