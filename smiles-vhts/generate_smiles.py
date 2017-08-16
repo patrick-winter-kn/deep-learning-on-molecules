@@ -5,7 +5,7 @@ import re
 from progressbar import ProgressBar
 
 
-atoms = {'o': 0.12, 's': 0.02, 'n': 0.11, 'f': 0.01, 'c': 0.72, 'l': 0.01, 'h': 0.01}
+atoms = {'o': 0.13, 's': 0.03, 'n': 0.12, 'c': 0.72}
 branches = 0.19
 rings = 0.14
 atom_pattern = re.compile('[a-z]')
@@ -24,7 +24,7 @@ def get_arguments():
 
 
 def is_branch(action, current_length, target_length):
-    return action <= branches and current_length > 0 and current_length + 3 < target_length
+    return action <= branches and current_length > 0 and current_length + 4 < target_length
 
 
 def is_ring(action, current_length, target_length, label_size):
@@ -51,7 +51,7 @@ def generate_smiles(min_length, max_length, is_in_ring):
     while len(string) < length:
         action = random.uniform(0.0, 1.0)
         if is_branch(action, len(string), length) and is_atom(string[-1]):
-            string += '(' + generate_smiles(1, length - len(string) - 2, False) + ')'
+            string += '(' + generate_smiles(1, length - len(string) - 3, False) + ')' + pick_atom()
         elif is_ring(action, len(string), length, len(str(ring_label))) and is_atom(string[-1]) and not is_in_ring:
             label = str(ring_label)
             ring_label += 1
