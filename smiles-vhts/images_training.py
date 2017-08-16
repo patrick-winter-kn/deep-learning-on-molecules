@@ -61,11 +61,11 @@ with ProgressBar(max_value=len(train)) as progress:
         img_array[i] = image.img_to_array(img)
         progress.update(i+1)
 
-data_gen = ImageDataGenerator(rotation_range=360, width_shift_range=1, height_shift_range=1)
-data_gen.fit(img_array)
-model.fit_generator(data_gen.flow(img_array, classes, batch_size=args.batch_size),
-                    steps_per_epoch=len(img_array)/args.batch_size, epochs=args.epochs, callbacks=callbacks)
-# model.fit(img_array, classes, epochs=args.epochs, shuffle='batch', batch_size=args.batch_size, callbacks=callbacks)
+# data_gen = ImageDataGenerator(rotation_range=360, width_shift_range=1, height_shift_range=1)
+# data_gen.fit(img_array)
+# model.fit_generator(data_gen.flow(img_array, classes, batch_size=args.batch_size),
+#                     steps_per_epoch=len(img_array)/args.batch_size, epochs=args.epochs, callbacks=callbacks)
+model.fit(img_array, classes, epochs=args.epochs, shuffle='batch', batch_size=args.batch_size, callbacks=callbacks)
 
 data_h5.close()
 train_h5.close()
