@@ -12,6 +12,7 @@ from util.learn import  DrugDiscoveryEval
 from util import actives_counter
 from keras import models
 from models import image_cnn
+from keras.preprocessing.image import ImageDataGenerator
 
 
 def get_arguments():
@@ -35,7 +36,7 @@ width, height = image.load_img(image_dir + str(train[0]) + '.png').size
 if os.path.exists(args.model):
     model = models.load_model(args.model)
 else:
-    model = image_cnn.create_model_2((width, height, 3), 2)
+    model = image_cnn.create_model((width, height, 3), 2)
     model.summary()
 checkpointer = ModelCheckpoint(filepath=args.model)
 tensorboard = TensorBoard(log_dir=args.data[:args.data.rfind('.')] + '-tensorboard', histogram_freq=1, write_graph=True,
@@ -59,7 +60,12 @@ with ProgressBar(max_value=len(train)) as progress:
         img = image.load_img(image_dir + str(train[i]) + '.png')
         img_array[i] = image.img_to_array(img)
         progress.update(i+1)
-model.fit(img_array, classes, epochs=args.epochs, shuffle='batch', batch_size=args.batch_size, callbacks=callbacks)
+
+data_gen = ImageDataGenerator(rotation_range=360, width_shift_range=1, height_shift_range=1)
+data_gen.fit(img_array)
+model.fit_generator(data_gen.flow(img_array, classes, batch_size=args.batch_size),
+                    steps_per_epoch=len(img_array)/args.batch_size, epochs=args.epochs, callbacks=callbacks)
+# model.fit(img_array, classes, epochs=args.epochs, shuffle='batch', batch_size=args.batch_size, callbacks=callbacks)
 
 data_h5.close()
 train_h5.close()
