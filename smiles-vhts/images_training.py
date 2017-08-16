@@ -35,7 +35,7 @@ width, height = image.load_img(image_dir + str(train[0]) + '.png').size
 if os.path.exists(args.model):
     model = models.load_model(args.model)
 else:
-    model = image_cnn.create_model((width, height, 3), 2)
+    model = image_cnn.create_model_2((width, height, 3), 2)
     model.summary()
 checkpointer = ModelCheckpoint(filepath=args.model)
 tensorboard = TensorBoard(log_dir=args.data[:args.data.rfind('.')] + '-tensorboard', histogram_freq=1, write_graph=True,

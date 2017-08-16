@@ -1,4 +1,4 @@
-from keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense
+from keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from keras.models import Model
 
 def create_model(input_shape, classes):
@@ -37,4 +37,26 @@ def create_model(input_shape, classes):
     model = Model(inputs=img_input, outputs=x)
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
+    return model
+
+
+def create_model_2(input_shape, classes):
+    img_input = Input(input_shape, name='input')
+    x = Dropout(0.3, name='input_drop')(img_input)
+    x = Conv2D(64, 3, activation='relu', padding='same', name='conv_1_drop')(x)
+    x = Dropout(0.75, name='conv_1_drop')(x)
+    x = Conv2D(128, 3, activation='relu', padding='same', name='conv_2_drop')(x)
+    x = Dropout(0.75, name='conv_2_drop')(x)
+    x = Conv2D(256, 3, activation='relu', padding='same', name='conv_3_drop')(x)
+    x = Dropout(0.75, name='conv_3_drop')(x)
+    x = Conv2D(512, 3, activation='relu', padding='same', name='conv_4_drop')(x)
+    x = Dropout(0.75, name='conv_4_drop')(x)
+    x = Conv2D(512, 3, activation='relu', padding='same', name='conv_5_drop')(x)
+    x = Dropout(0.75, name='conv_5_drop')(x)
+    x = Flatten(name='flatten')(x)
+    x = Dense(128, activation='relu', name='dense_1')(x)
+    x = Dropout(0.75, name='dense_1_drop')(x)
+    out = Dense(classes, activation='softmax', name='output')(x)
+    model = Model(inputs=img_input, outputs=out)
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     return model
