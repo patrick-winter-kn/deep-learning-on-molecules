@@ -28,6 +28,8 @@ def is_branch(action, current_length, target_length):
 
 
 def is_ring(action, current_length, target_length, label_size):
+    if label_size > 1:
+        label_size += 1
     return action > branches and action <= rings + branches and current_length > 0 and current_length + label_size * 2 + 2 < target_length
 
 
@@ -54,6 +56,8 @@ def generate_smiles(min_length, max_length, is_in_ring):
             string += '(' + generate_smiles(1, length - len(string) - 3, False) + ')' + pick_atom()
         elif is_ring(action, len(string), length, len(str(ring_label))) and is_atom(string[-1]) and not is_in_ring:
             label = str(ring_label)
+            if ring_label > 9:
+                label = '%' + label
             ring_label += 1
             string += label + generate_smiles(2, length - len(string) - (len(label) * 2), True) + label
         else:

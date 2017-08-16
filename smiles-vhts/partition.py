@@ -26,7 +26,7 @@ with ProgressBar(max_value=len(classes)) as progress:
             active_indices.append(i)
         else:
             inactive_indices.append(i)
-        progress.update()
+        progress.update(i+1)
 print('Found ' + str(len(active_indices)) + ' active indices and ' + str(len(inactive_indices)) + ' inactive data points')
 number_training = round(len(classes) * args.split * 0.01)
 number_training_active = round(number_training * (len(active_indices) / len(classes)))
