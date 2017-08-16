@@ -54,7 +54,7 @@ def create_model_2(input_shape, classes):
     x = Conv2D(512, 3, activation='relu', padding='same', name='conv_5')(x)
     x = Dropout(0.75, name='conv_5_drop')(x)
     x = Flatten(name='flatten')(x)
-    x = Dense(128, activation='relu', name='dense_1')(x)
+    x = Dense(32, activation='relu', name='dense_1')(x)
     x = Dropout(0.75, name='dense_1_drop')(x)
     out = Dense(classes, activation='softmax', name='output')(x)
     model = Model(inputs=img_input, outputs=out)
