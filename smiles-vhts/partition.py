@@ -2,7 +2,6 @@ import argparse
 import h5py
 from progressbar import ProgressBar
 import random
-import math
 
 
 def get_arguments():
@@ -29,8 +28,8 @@ with ProgressBar(max_value=len(classes)) as progress:
             inactive_indices.append(i)
         progress.update()
 print('Found ' + str(len(active_indices)) + ' active indices and ' + str(len(inactive_indices)) + ' inactive data points')
-number_training = math.ceil(len(classes) * args.split * 0.01)
-number_training_active = math.ceil(number_training * (len(active_indices) / len(classes)))
+number_training = round(len(classes) * args.split * 0.01)
+number_training_active = round(number_training * (len(active_indices) / len(classes)))
 number_training_inactive = number_training - number_training_active
 print('Picking data points for training')
 with ProgressBar(max_value=number_training) as progress:
