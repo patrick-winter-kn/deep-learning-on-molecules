@@ -19,7 +19,7 @@ def generate(smiles, fingerprints, size):
     print('Generating fingerprints')
     with ProgressBar(max_value=len(smiles)) as progress:
         for i in range(len(smiles)):
-            mol = Chem.MolFromSmiles(smiles[i])
+            mol = Chem.MolFromSmiles(smiles[i], sanitize=False)
             fingerprint = AllChem.GetMorganFingerprintAsBitVect(mol, 2, size)
             fingerprints[i] = numpy.array(fingerprint)
             progress.update(i+1)

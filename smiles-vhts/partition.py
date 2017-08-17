@@ -39,19 +39,19 @@ with ProgressBar(max_value=number_training) as progress:
     for i in range(number_training_inactive):
         del inactive_indices[random.randint(0, len(inactive_indices) - 1)]
         progress.update(i + number_training_active + 1)
-partition = data_h5.create_dataset(args.dataset_prefix + 'partition', (len(classes),), 'i')
+partition = data_h5.create_dataset(args.dataset_prefix + 'partition', (len(classes),1), 'i')
 print('Writing partitions')
 with ProgressBar(max_value=len(classes)) as progress:
     for i in range(len(classes)):
         if classes[i,0] > 0.0:
             if i in active_indices:
-                partition[i] = 2
+                partition[i,0] = 2
             else:
-                partition[i] = 1
+                partition[i,0] = 1
         else:
             if i in inactive_indices:
-                partition[i] = 2
+                partition[i,0] = 2
             else:
-                partition[i] = 1
+                partition[i,0] = 1
         progress.update(i + 1)
 data_h5.close()
